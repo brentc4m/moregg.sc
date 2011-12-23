@@ -1,10 +1,66 @@
-#container
-  #header
+.container
+  #cgf-header
     %h1 Custom Game Finder
-  #sidebar
-    %p Yay I'm a sidebar!
-  #content
-    %h2 Content
-    %p Oh boy it's some content!
-  #footer
-    %p And here's the footer!
+  .row
+    #cgf-content.span12
+    #cgf-sidebar.span4
+  #cgf-footer
+
+%script#user-details-tmpl(type="text/template")
+  <% if (user.logged_in) { %>
+  %h2 <%= user.name + '.' + user.char_code %>
+  %dl
+    %dt Region
+    %dd <%= user.region %>
+  <% } else { %>
+  %h2 Welcome
+  <% } %>
+
+%script#login-form-tmpl(type="text/template")
+  .modal-backdrop
+  .modal
+    .modal-header
+      %h3 Login
+    .modal-body
+      %form
+        %fieldset
+          %legend Enter your Battle.net details
+          #profile-url-cf.clearfix
+            %label(for="profile-url") Profile URL
+            .input
+              %input#profile-url.xlarge(type="text")/
+          #char-code-cf.clearfix
+            %label(for="char-code") Character Code
+            .input
+              %input#char-code.mini(type="text" maxlength=3)/
+    .modal-footer
+      %button#login-btn.btn.primary Login
+
+%script#create-lobby-tmpl(type="text/template")
+  %form
+    %fieldset
+      .actions
+        %button#create-lobby-btn.btn.primary(type="button") Create Lobby
+
+%script#lobby-tmpl(type="text/template")
+  .row
+    #chat-box.span8
+      %ul#msg-list
+    #user-list.span4
+  %input#msg-box(type="text")/
+  %button#send-chat-btn.btn.primary Send
+
+%script#lobby-players-tmpl(type="text/template")
+  %ul
+    <% for (var i=0; i<players.length; i++) { %>
+    %li <%= player_link({player: players[i]}) %>
+    <% } %>
+
+%script#player-link-tmpl(type="text/template")
+  <a href="<%= player.profile_url %>"><%= player.name + '.' + player.char_code %></a>
+
+%script#chat-msg-tmpl(type="text/template")
+  %li <%= timestamp %> <%= msg %>
+
+%script#form-error-tmpl(type="text/template")
+  %span.help-inline <%= msg %>
