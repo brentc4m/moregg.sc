@@ -1,1 +1,10 @@
 @import "bootstrap";
+
+#msg-box {
+    width: 100%;
+}
+
+#chat-box {
+    height: 300px;
+    overflow-y: auto;
+}

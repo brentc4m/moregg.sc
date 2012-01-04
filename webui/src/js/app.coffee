@@ -3,13 +3,11 @@ $ ->
     class Events
     Events.prototype extends Backbone.Events
 
-    class window.CurrentUserGlobal extends Events
+    class CurrentUserGlobal extends Events
         constructor: ->
             if localStorage['cgf.logged_in']
-                @name = localStorage['cgf.name']
-                @char_code = localStorage['cgf.char_code']
-                @profile_url = localStorage['cgf.profile_url']
-                @region = localStorage['cgf.region']
+                for attr in ['name', 'char_code', 'profile_url', 'region']
+                    this[attr] = localStorage['cgf.' + attr]
                 @logged_in = true
             else
                 @logged_in = false
@@ -18,18 +16,12 @@ $ ->
             name: @name
             char_code: @char_code
             profile_url: @profile_url
-            region: @region
 
         logout: =>
+            for attr in ['name', 'char_code', 'profile_url', 'region']
+                delete localStorage['cgf.' + attr]
+                delete this[attr]
             delete localStorage['cgf.logged_in']
-            delete localStorage['cgf.name']
-            delete localStorage['cgf.char_code']
-            delete localStorage['cgf.profile_url']
-            delete localStorage['cgf.region']
-            delete @name
-            delete @char_code
-            delete @profile_url
-            delete @region
             @logged_in = false
             this.trigger('change')
 
@@ -41,11 +33,11 @@ $ ->
             localStorage['cgf.logged_in'] = 'true'
             @logged_in = true
             this.trigger('change')
-    window.CurrentUser = new CurrentUserGlobal()
+    CurrentUser = new CurrentUserGlobal()
 
     class GameServerGlobal extends Events
         constructor: ->
-            @socket = io.connect('http://brentc4m.dyndns.org:8080')
+            @socket = io.connect('http://localhost:5000')
 
         createLobby: =>
             request =
@@ -54,35 +46,51 @@ $ ->
                 profile_url: CurrentUser.profile_url
                 params:
                     region: CurrentUser.region
-            @socket.on('lobbyCreated', (d) => this.trigger('lobbyCreated', d))
             @socket.on('playerJoined', (d) => this.trigger('playerJoined', d))
+            @socket.on('playerLeft', (d) => this.trigger('playerLeft', d))
             @socket.on('chatReceived', (d) => this.trigger('chatReceived', d))
-            @socket.emit('createLobby', request)
+            @socket.emit('createLobby', request, => this.trigger('lobbyCreated'))
 
         sendChat: (msg) =>
             @socket.emit('sendChat', msg)
 
-    window.GameServer = new GameServerGlobal()
+        exitLobby: =>
+            @socket.removeAllListeners('lobbyCreated')
+            @socket.removeAllListeners('playerJoined')
+            @socket.removeAllListeners('playerLeft')
+            @socket.removeAllListeners('chatReceived')
+            @socket.emit('exitLobby')
+    GameServer = new GameServerGlobal()
 
-    class window.UserDetailsView extends Backbone.View
+    getTemplate = _.memoize((id) ->
+        return _.template($('#' + id + '-tmpl').html())
+    )
+
+    render = (id, data) ->
+        tmpl = getTemplate(id)
+        return tmpl(data)
+
+    class UserDetailsView extends Backbone.View
         id: 'user-details-view'
 
-        tmpl: _.template($('#user-details-tmpl').html())
+        events:
+            'click #logout-btn': 'logout'
 
         initialize: =>
             CurrentUser.bind('change', @render)
 
         render: =>
-            $(@el).html(this.tmpl({user: CurrentUser}))
+            $(@el).html(render('user-details', {user: CurrentUser}))
 
         show: =>
             this.render()
             $('#cgf-sidebar').append(@el)
 
-        hide: =>
-            $(@el).detach()
+        logout: =>
+            CurrentUser.logout()
+            window.location.reload()
 
-    class window.LoginView extends Backbone.View
+    class LoginView extends Backbone.View
         id: 'login-view'
 
         events:
@@ -90,22 +98,17 @@ $ ->
             'keypress #char-code': 'loginOnEnter'
             'click #login-btn': 'login'
 
-        formTmpl: _.template($('#login-form-tmpl').html())
-
-        errorTmpl: _.template($('#form-error-tmpl').html())
-
-        render: =>
-            $(@el).html(this.formTmpl())
-
         show: =>
-            this.render()
+            $(@el).html(render('login-form'))
             $('body').append(@el)
 
         hide: =>
             $(@el).detach()
 
         login: =>
-            this.clearErrors()
+            this.$('.clearfix').removeClass('error')
+            this.$('input').removeClass('error')
+            this.$('.help-inline').remove()
             profile_url = this.$('#profile-url').val()
             char_code = this.$('#char-code').val()
             @options.app.login(profile_url, char_code)
@@ -113,30 +116,20 @@ $ ->
         loginOnEnter: (e) =>
             this.login() if e.keyCode is 13
 
-        clearErrors: =>
-            this.$('.clearfix').removeClass('error')
-            this.$('input').removeClass('error')
-            this.$('.help-inline').remove()
-
         error: (field, msg) =>
             this.$('#' + field + '-cf').addClass('error')
             input = this.$('#' + field)
             input.addClass('error')
-            input.after(this.errorTmpl({msg: msg}))
+            input.after(render('form-error', {msg: msg}))
 
-    class window.CreateLobbyView extends Backbone.View
+    class CreateLobbyView extends Backbone.View
         id: 'create-lobby-view'
 
         events:
             'click #create-lobby-btn': 'createLobby'
 
-        tmpl: _.template($('#create-lobby-tmpl').html())
-
-        render: =>
-            $(@el).html(this.tmpl())
-
         show: =>
-            this.render()
+            $(@el).html(render('create-lobby'))
             $('#cgf-content').append(@el)
 
         hide: =>
@@ -145,38 +138,33 @@ $ ->
         createLobby: =>
             this.options.app.createLobby()
 
-    class window.LobbyView extends Backbone.View
+    class LobbyView extends Backbone.View
         id: 'lobby-view'
 
         events:
-            'click #send-chat-btn': 'sendChat'
             'keypress #msg-box': 'sendChatOnEnter'
-
-        tmpl: _.template($('#lobby-tmpl').html())
-
-        playersTmpl: _.template($('#lobby-players-tmpl').html())
-
-        playerLinkTmpl: _.template($('#player-link-tmpl').html())
-
-        msgTmpl: _.template($('#chat-msg-tmpl').html())
+            'click #exit-lobby-btn': 'exitLobby'
 
         initialize: =>
-            @players = []
-            @lobby_id = null
             GameServer.bind('lobbyCreated', this.lobbyCreated)
             GameServer.bind('playerJoined', this.playerJoined)
+            GameServer.bind('playerLeft', this.playerLeft)
             GameServer.bind('chatReceived', this.chatReceived)
-
+        
         render: =>
-            $(@el).html(this.tmpl())
+            $(@el).html(render('lobby'))
 
         renderPlayers: =>
-            this.$('#user-list').html(this.playersTmpl(
+            this.$('#user-list').html(render('lobby-players',
                 players: @players
-                player_link: this.playerLinkTmpl
+                player_link: (player_info) ->
+                    return render('player-link', player_info)
             ))
 
         show: =>
+            @players = []
+            @lobby_id = null
+
             this.render()
             $('#cgf-content').append(@el)
             this.$('#msg-box').focus()
@@ -188,6 +176,7 @@ $ ->
         sendChat: =>
             msg_box = this.$('#msg-box')
             msg = msg_box.val()
+            return if not msg
             msg_box.val('')
             this.chatReceived({id: @lobby_id, text: msg})
             GameServer.sendChat(msg)
@@ -197,30 +186,41 @@ $ ->
 
         addMsg: (msg) =>
             timestamp = new Date().toString('HH:mm:ss')
-            this.$('#msg-list').append(this.msgTmpl(
+            this.$('#msg-list').append(render('chat-msg',
                 timestamp: timestamp
                 msg: msg
             ))
+            box = $('#chat-box')
+            box.scrollTop(box[0].scrollHeight)
 
-        lobbyCreated: (lobby_info) =>
-            @lobby_id = lobby_info.id
-            this.addMsg('Lobby #' + lobby_info.id + ' created')
+        lobbyCreated: =>
+            @lobby_id = GameServer.socket.id
+            this.addMsg('Lobby created')
             curr_player = CurrentUser.toJSON()
             curr_player.id = @lobby_id
             this.playerJoined(curr_player)
 
+        playerLink: (id) =>
+            player_info = _.find(@players, (p) -> p.id is id)
+            return render('player-link', {player: player_info})
+
         playerJoined: (player_info) =>
             @players.push(player_info)
             this.renderPlayers()
-            player_link = this.playerLinkTmpl({player: player_info})
-            this.addMsg(player_link + ' has joined the lobby')
+            this.addMsg(this.playerLink(player_info.id) + ' has joined the lobby')
+
+        playerLeft: (id) =>
+            this.addMsg(this.playerLink(id) + ' has left the lobby')
+            @players = _.reject(@players, (p) -> p.id is id)
+            this.renderPlayers()
 
         chatReceived: (msg_info) =>
-            player_info = _.find(@players, (p) -> p.id == msg_info.id)
-            player_link = this.playerLinkTmpl({player: player_info})
-            this.addMsg(player_link + ': ' + msg_info.text)
+            this.addMsg(this.playerLink(msg_info.id) + ': ' + msg_info.text)
+
+        exitLobby: =>
+            this.options.app.exitLobby()
         
-    class window.CGFView extends Backbone.View
+    class CGFView extends Backbone.View
         BNET_REGIONS:
             'www.battlenet.com.cn': 'CN'
             'sea.battle.net': 'SEA'
@@ -267,5 +267,10 @@ $ ->
             @create_lobby_view.hide()
             @lobby_view.show()
             GameServer.createLobby()
+
+        exitLobby: =>
+            GameServer.exitLobby()
+            @lobby_view.hide()
+            @create_lobby_view.show()
 
     new CGFView().render()

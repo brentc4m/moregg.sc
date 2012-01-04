@@ -12,6 +12,7 @@
   %dl
     %dt Region
     %dd <%= user.region %>
+  %button#logout-btn.btn.primary Logout
   <% } else { %>
   %h2 Welcome
   <% } %>
@@ -45,19 +46,21 @@
 %script#lobby-tmpl(type="text/template")
   .row
     #chat-box.span8
-      %ul#msg-list
+      %ul#msg-list.unstyled
     #user-list.span4
-  %input#msg-box(type="text")/
-  %button#send-chat-btn.btn.primary Send
+  .row
+    .span8
+      %input#msg-box(type="text")/
+  %button#exit-lobby-btn.btn.primary Exit Lobby
 
 %script#lobby-players-tmpl(type="text/template")
-  %ul
+  %ul.unstyled
     <% for (var i=0; i<players.length; i++) { %>
     %li <%= player_link({player: players[i]}) %>
     <% } %>
 
-%script#player-link-tmpl(type="text/template")
-  <a href="<%= player.profile_url %>"><%= player.name + '.' + player.char_code %></a>
+%script#player-link-tmpl(type="text/template")<
+  <a target="_blank" href="<%= player.profile_url %>"><%= player.name + '.' + player.char_code %></a>
 
 %script#chat-msg-tmpl(type="text/template")
   %li <%= timestamp %> <%= msg %>
