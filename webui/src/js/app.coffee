@@ -3,10 +3,25 @@ $ ->
     class Events
     Events.prototype extends Backbone.Events
 
+    class LobbyOptionsGlobal
+        constructor: ->
+            if 'cgf.lobby_options' of localStorage
+                @opts = JSON.parse(localStorage['cgf.lobby_options'])
+            else
+                @opts =
+                    opp_races: ['random', 'terran', 'zerg', 'protoss']
+                this.save()
+
+        save: =>
+            localStorage['cgf.lobby_options'] = JSON.stringify(@opts)
+    LobbyOptions = new LobbyOptionsGlobal()
+
     class CurrentUserGlobal extends Events
+        attrs: ['name', 'char_code', 'profile_url', 'region', 'race']
+
         constructor: ->
             if localStorage['cgf.logged_in']
-                for attr in ['name', 'char_code', 'profile_url', 'region']
+                for attr in @attrs
                     this[attr] = localStorage['cgf.' + attr]
                 @logged_in = true
             else
@@ -18,21 +33,31 @@ $ ->
             profile_url: @profile_url
 
         logout: =>
-            for attr in ['name', 'char_code', 'profile_url', 'region']
+            for attr in @attrs
                 delete localStorage['cgf.' + attr]
                 delete this[attr]
             delete localStorage['cgf.logged_in']
             @logged_in = false
             this.trigger('change')
 
+        saveAttrs: =>
+            for attr in @attrs
+                localStorage['cgf.' + attr] = this[attr]
+
         login: (profile_url, region, name, char_code) =>
-            @name = localStorage['cgf.name'] = name
-            @char_code = localStorage['cgf.char_code'] = char_code
-            @profile_url = localStorage['cgf.profile_url'] = profile_url
-            @region = localStorage['cgf.region'] = region
+            @name = name
+            @char_code = char_code
+            @profile_url = profile_url
+            @region = region
+            @race = 'random'
+            this.saveAttrs()
             localStorage['cgf.logged_in'] = 'true'
             @logged_in = true
             this.trigger('change')
+
+        changeRace: (race) =>
+            @race = race
+            this.saveAttrs()
     CurrentUser = new CurrentUserGlobal()
 
     class GameServerGlobal extends Events
@@ -40,12 +65,14 @@ $ ->
             @socket = io.connect('http://localhost:5000')
 
         createLobby: =>
+            params = _.clone(LobbyOptions.opts)
+            params.region = CurrentUser.region
+            params.race = CurrentUser.race
             request =
                 name: CurrentUser.name
                 char_code: CurrentUser.char_code
                 profile_url: CurrentUser.profile_url
-                params:
-                    region: CurrentUser.region
+                params: params
             @socket.on('playerJoined', (d) => this.trigger('playerJoined', d))
             @socket.on('playerLeft', (d) => this.trigger('playerLeft', d))
             @socket.on('chatReceived', (d) => this.trigger('chatReceived', d))
@@ -75,12 +102,15 @@ $ ->
 
         events:
             'click #logout-btn': 'logout'
+            'change #race-select': 'changeRace'
 
         initialize: =>
             CurrentUser.bind('change', @render)
+            @races = ['random', 'terran', 'zerg', 'protoss']
 
         render: =>
-            $(@el).html(render('user-details', {user: CurrentUser}))
+            $(@el).html(render('user-details',
+                {user: CurrentUser, races: @races}))
 
         show: =>
             this.render()
@@ -89,6 +119,10 @@ $ ->
         logout: =>
             CurrentUser.logout()
             window.location.reload()
+
+        changeRace: =>
+            race = this.$('#race-select option:selected').val()
+            CurrentUser.changeRace(race)
 
     class LoginView extends Backbone.View
         id: 'login-view'
@@ -127,16 +161,31 @@ $ ->
 
         events:
             'click #create-lobby-btn': 'createLobby'
+            'change input[name="opp_races"]': 'changeOppRaces'
 
         show: =>
-            $(@el).html(render('create-lobby'))
+            $(@el).html(render('create-lobby', {opts: LobbyOptions.opts}))
             $('#cgf-content').append(@el)
 
         hide: =>
             $(@el).detach()
 
         createLobby: =>
-            this.options.app.createLobby()
+            this.$('.clearfix').removeClass('error')
+            this.$('.help-inline').remove()
+            opts_valid = true
+            if LobbyOptions.opts.opp_races.length is 0
+                this.$('#opp-races-cf').addClass('error')
+                this.$('#opp-races-cf .input').append(
+                    render('form-error', {msg: 'Choose at least one race'}))
+                opts_valid = false
+            this.options.app.createLobby() if opts_valid
+
+        changeOppRaces: =>
+            checked = this.$('input[name="opp_races"]:checked')
+            races = (c.value for c in checked)
+            LobbyOptions.opts.opp_races = races
+            LobbyOptions.save()
 
     class LobbyView extends Backbone.View
         id: 'lobby-view'

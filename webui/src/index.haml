@@ -12,6 +12,12 @@
   %dl
     %dt Region
     %dd <%= user.region %>
+    %dt Race
+    %dd
+      %select#race-select.small
+        <% for (var i=0; i<races.length; i++) { %>
+        <option value="<%= races[i] %>"<% if (races[i] === user.race) { %> selected="selected" <% } %>><%= races[i].charAt(0).toUpperCase() + races[i].slice(1) %></option>
+        <% } %>
   %button#logout-btn.btn.primary Logout
   <% } else { %>
   %h2 Welcome
@@ -40,6 +46,27 @@
 %script#create-lobby-tmpl(type="text/template")
   %form
     %fieldset
+      %legend Game options
+      #opp-races-cf.clearfix
+        %label Opponent's race
+        .input
+          %ul.inputs-list
+            %li
+              %label
+                <input type="checkbox" name="opp_races" value="random" <% if (opts.opp_races.indexOf('random') != -1) { %>checked="checked"<% } %>/>
+                %span Random
+            %li
+              %label
+                <input type="checkbox" name="opp_races" value="terran" <% if (opts.opp_races.indexOf('terran') != -1) { %>checked="checked"<% } %>/>
+                %span Terran
+            %li
+              %label
+                <input type="checkbox" name="opp_races" value="zerg" <% if (opts.opp_races.indexOf('zerg') != -1) { %>checked="checked"<% } %>/>
+                %span Zerg
+            %li
+              %label
+                <input type="checkbox" name="opp_races" value="protoss" <% if (opts.opp_races.indexOf('protoss') != -1) { %>checked="checked"<% } %>/>
+                %span Protoss
       .actions
         %button#create-lobby-btn.btn.primary(type="button") Create Lobby
 
