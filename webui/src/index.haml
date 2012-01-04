@@ -6,18 +6,22 @@
     #cgf-sidebar.span4
   #cgf-footer
 
+%script#user-select-tmpl(type="text/template")
+  %dt <%= label %>
+  %dd
+    <select id="<%= id + '-select' %>" class="medium">
+    <% for (var i=0; i<opts.length; i++) { %>
+    <option value="<%= opts[i].val %>"<% if (selected === opts[i].val) { %> selected="selected"<% } %>><%= opts[i].label %></option>
+    <% } %>
+    </select>
+
 %script#user-details-tmpl(type="text/template")
   <% if (user.logged_in) { %>
   %h2 <%= user.name + '.' + user.char_code %>
   %dl
     %dt Region
     %dd <%= user.region %>
-    %dt Race
-    %dd
-      %select#race-select.small
-        <% for (var i=0; i<races.length; i++) { %>
-        <option value="<%= races[i] %>"<% if (races[i] === user.race) { %> selected="selected" <% } %>><%= races[i].charAt(0).toUpperCase() + races[i].slice(1) %></option>
-        <% } %>
+    <%= selects %>
   %button#logout-btn.btn.primary Logout
   <% } else { %>
   %h2 Welcome
@@ -43,30 +47,24 @@
     .modal-footer
       %button#login-btn.btn.primary Login
 
+%script#checkbox-group-tmpl(type="text/template")
+  <div id="<%= name + '-cf' %>" class="clearfix">
+  %label <%= label %>
+  .input
+    %ul.inputs-list
+      <% for (var i=0; i<opts.length; i++) { %>
+      %li
+        %label
+          <input type="checkbox" name="<%= name %>" value="<%= opts[i].val %>" <% if (checked.indexOf(opts[i].val) != -1) { %>checked="checked"<% } %>/>
+          %span <%= opts[i].label %>
+      <% } %>
+  </div>
+
 %script#create-lobby-tmpl(type="text/template")
   %form
     %fieldset
       %legend Game options
-      #opp-races-cf.clearfix
-        %label Opponent's race
-        .input
-          %ul.inputs-list
-            %li
-              %label
-                <input type="checkbox" name="opp_races" value="random" <% if (opts.opp_races.indexOf('random') != -1) { %>checked="checked"<% } %>/>
-                %span Random
-            %li
-              %label
-                <input type="checkbox" name="opp_races" value="terran" <% if (opts.opp_races.indexOf('terran') != -1) { %>checked="checked"<% } %>/>
-                %span Terran
-            %li
-              %label
-                <input type="checkbox" name="opp_races" value="zerg" <% if (opts.opp_races.indexOf('zerg') != -1) { %>checked="checked"<% } %>/>
-                %span Zerg
-            %li
-              %label
-                <input type="checkbox" name="opp_races" value="protoss" <% if (opts.opp_races.indexOf('protoss') != -1) { %>checked="checked"<% } %>/>
-                %span Protoss
+      <%= fields %>
       .actions
         %button#create-lobby-btn.btn.primary(type="button") Create Lobby
 

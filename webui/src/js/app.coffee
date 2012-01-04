@@ -4,20 +4,27 @@ $ ->
     Events.prototype extends Backbone.Events
 
     class LobbyOptionsGlobal
+        defaults:
+            opp_races: ['r', 't', 'z', 'p']
+            opp_leagues: []
+
         constructor: ->
             if 'cgf.lobby_options' of localStorage
                 @opts = JSON.parse(localStorage['cgf.lobby_options'])
             else
-                @opts =
-                    opp_races: ['random', 'terran', 'zerg', 'protoss']
-                this.save()
+                @opts = {}
+            @opts = _.defaults(@opts, @defaults)
+            this.save()
 
         save: =>
             localStorage['cgf.lobby_options'] = JSON.stringify(@opts)
+
+        clear: =>
+            delete localStorage['cgf.lobby_options']
     LobbyOptions = new LobbyOptionsGlobal()
 
     class CurrentUserGlobal extends Events
-        attrs: ['name', 'char_code', 'profile_url', 'region', 'race']
+        attrs: ['name', 'char_code', 'profile_url', 'region', 'race', 'league']
 
         constructor: ->
             if localStorage['cgf.logged_in']
@@ -38,6 +45,7 @@ $ ->
                 delete this[attr]
             delete localStorage['cgf.logged_in']
             @logged_in = false
+            LobbyOptions.clear()
             this.trigger('change')
 
         saveAttrs: =>
@@ -50,6 +58,7 @@ $ ->
             @profile_url = profile_url
             @region = region
             @race = 'random'
+            @league = 'bronze'
             this.saveAttrs()
             localStorage['cgf.logged_in'] = 'true'
             @logged_in = true
@@ -57,6 +66,10 @@ $ ->
 
         changeRace: (race) =>
             @race = race
+            this.saveAttrs()
+
+        changeLeague: (league) =>
+            @league = league
             this.saveAttrs()
     CurrentUser = new CurrentUserGlobal()
 
@@ -68,6 +81,7 @@ $ ->
             params = _.clone(LobbyOptions.opts)
             params.region = CurrentUser.region
             params.race = CurrentUser.race
+            params.league = CurrentUser.league
             request =
                 name: CurrentUser.name
                 char_code: CurrentUser.char_code
@@ -97,20 +111,53 @@ $ ->
         tmpl = getTemplate(id)
         return tmpl(data)
 
+    LEAGUE_OPTS = [
+        {val: 'b', label: 'Bronze'},
+        {val: 's', label: 'Silver'},
+        {val: 'g', label: 'Gold'},
+        {val: 'p', label: 'Platinum'},
+        {val: 'd', label: 'Diamond'},
+        {val: 'm', label: 'Master'},
+        {val: 'gm', label: 'Grandmaster'}
+    ]
+
+    RACE_OPTS = [
+        {val: 'r', label: 'Random'},
+        {val: 't', label: 'Terran'},
+        {val: 'z', label: 'Zerg'},
+        {val: 'p', label: 'Protoss'}
+    ]
+
     class UserDetailsView extends Backbone.View
         id: 'user-details-view'
 
         events:
             'click #logout-btn': 'logout'
             'change #race-select': 'changeRace'
+            'change #league-select': 'changeLeague'
 
         initialize: =>
             CurrentUser.bind('change', @render)
-            @races = ['random', 'terran', 'zerg', 'protoss']
 
         render: =>
+            selects = ''
+            if CurrentUser.logged_in
+                selects += render('user-select',
+                    id: 'league'
+                    label: 'League'
+                    selected: CurrentUser.league
+                    opts: LEAGUE_OPTS
+                )
+                selects += render('user-select',
+                    id: 'race'
+                    label: 'Race'
+                    selected: CurrentUser.race
+                    opts: RACE_OPTS
+                )
             $(@el).html(render('user-details',
-                {user: CurrentUser, races: @races}))
+                user: CurrentUser
+                selects: selects
+            ))
 
         show: =>
             this.render()
@@ -123,6 +170,10 @@ $ ->
         changeRace: =>
             race = this.$('#race-select option:selected').val()
             CurrentUser.changeRace(race)
+
+        changeLeague: =>
+            league = this.$('#league-select option:selected').val()
+            CurrentUser.changeLeague(league)
 
     class LoginView extends Backbone.View
         id: 'login-view'
@@ -161,10 +212,23 @@ $ ->
 
         events:
             'click #create-lobby-btn': 'createLobby'
-            'change input[name="opp_races"]': 'changeOppRaces'
+            'change input[name="opp-races"]': 'changeOppRaces'
+            'change input[name="opp-leagues"]': 'changeOppLeagues'
 
         show: =>
-            $(@el).html(render('create-lobby', {opts: LobbyOptions.opts}))
+            fields = render('checkbox-group',
+                name: 'opp-leagues'
+                label: "Opponent's league"
+                checked: LobbyOptions.opts.opp_leagues
+                opts: LEAGUE_OPTS
+            )
+            fields += render('checkbox-group',
+                name: 'opp-races'
+                label: "Opponent's race"
+                checked: LobbyOptions.opts.opp_races
+                opts: RACE_OPTS
+            )
+            $(@el).html(render('create-lobby', {fields: fields}))
             $('#cgf-content').append(@el)
 
         hide: =>
@@ -179,12 +243,23 @@ $ ->
                 this.$('#opp-races-cf .input').append(
                     render('form-error', {msg: 'Choose at least one race'}))
                 opts_valid = false
+            if LobbyOptions.opts.opp_leagues.length is 0
+                this.$('#opp-leagues-cf').addClass('error')
+                this.$('#opp-leagues-cf .input').append(
+                    render('form-error', {msg: 'Choose at least one league'}))
+                opts_valid = false
             this.options.app.createLobby() if opts_valid
 
         changeOppRaces: =>
-            checked = this.$('input[name="opp_races"]:checked')
+            checked = this.$('input[name="opp-races"]:checked')
             races = (c.value for c in checked)
             LobbyOptions.opts.opp_races = races
+            LobbyOptions.save()
+
+        changeOppLeagues: =>
+            checked = this.$('input[name="opp-leagues"]:checked')
+            leagues = (c.value for c in checked)
+            LobbyOptions.opts.opp_leagues = leagues
             LobbyOptions.save()
 
     class LobbyView extends Backbone.View

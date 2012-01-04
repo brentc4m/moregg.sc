@@ -4,10 +4,15 @@ _ = require('underscore')
 raceMatches = (p1, p2) ->
     return p2.race in p1.opp_races
 
+leagueMatches = (p1, p2) ->
+    return p2.league in p1.opp_leagues
+
 paramsMatch = (p1, p2) ->
     if p1.region isnt p2.region
         return false
     if not raceMatches(p1, p2) or not raceMatches(p2, p1)
+        return false
+    if not leagueMatches(p1, p2) or not leagueMatches(p2, p1)
         return false
     return true
 
