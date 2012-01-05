@@ -6,6 +6,7 @@ class LobbyOptionsGlobal
     defaults:
         opp_races: ['r', 't', 'z', 'p']
         opp_leagues: []
+        series: ['bo1']
 
     constructor: ->
         if 'cgf.lobby_options' of localStorage

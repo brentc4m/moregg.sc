@@ -7,12 +7,17 @@ raceMatches = (p1, p2) ->
 leagueMatches = (p1, p2) ->
     return p2.league in p1.opp_leagues
 
+seriesMatches = (p1, p2) ->
+    return _.intersection(p1.series, p2.series).length > 0
+
 paramsMatch = (p1, p2) ->
     if p1.region isnt p2.region
         return false
     if not raceMatches(p1, p2) or not raceMatches(p2, p1)
         return false
     if not leagueMatches(p1, p2) or not leagueMatches(p2, p1)
+        return false
+    if not seriesMatches(p1, p2)
         return false
     return true
 

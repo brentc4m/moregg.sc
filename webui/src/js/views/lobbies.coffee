@@ -1,3 +1,9 @@
+window.SERIES_OPTS = [
+    {val: 'bo1', label: 'Best of 1'},
+    {val: 'bo3', label: 'Best of 3'},
+    {val: 'bo5', label: 'Best of 5'}
+]
+
 class window.CreateLobbyView extends Backbone.View
     id: 'create-lobby-view'
 
@@ -5,6 +11,7 @@ class window.CreateLobbyView extends Backbone.View
         'click #create-lobby-btn': 'createLobby'
         'change input[name="opp-races"]': 'changeOppRaces'
         'change input[name="opp-leagues"]': 'changeOppLeagues'
+        'change input[name="series"]': 'changeSeries'
 
     show: =>
         fields = render('checkbox-group',
@@ -19,26 +26,36 @@ class window.CreateLobbyView extends Backbone.View
             checked: LobbyOptions.opts.opp_races
             opts: RACE_OPTS
         )
+        fields += render('checkbox-group',
+            name: 'series'
+            label: 'Series type'
+            checked: LobbyOptions.opts.series
+            opts: SERIES_OPTS
+        )
         $(@el).html(render('create-lobby', {fields: fields}))
         $('#cgf-content').append(@el)
 
     hide: =>
         $(@el).detach()
 
+    validate: (vals, id, msg) =>
+        if vals.length is 0
+            this.$('#' + id + '-cf').addClass('error')
+            this.$('#' + id + '-cf .input').append(
+                render('form-error', {msg: msg}))
+            return false
+        return true
+
     createLobby: =>
         this.$('.clearfix').removeClass('error')
         this.$('.help-inline').remove()
         opts_valid = true
-        if LobbyOptions.opts.opp_races.length is 0
-            this.$('#opp-races-cf').addClass('error')
-            this.$('#opp-races-cf .input').append(
-                render('form-error', {msg: 'Choose at least one race'}))
-            opts_valid = false
-        if LobbyOptions.opts.opp_leagues.length is 0
-            this.$('#opp-leagues-cf').addClass('error')
-            this.$('#opp-leagues-cf .input').append(
-                render('form-error', {msg: 'Choose at least one league'}))
-            opts_valid = false
+        opts_valid &= this.validate(LobbyOptions.opts.opp_races, 'opp-races',
+            'Choose at least one race')
+        opts_valid &= this.validate(LobbyOptions.opts.opp_leagues, 'opp-leagues',
+            'Choose at least one league')
+        opts_valid &= this.validate(LobbyOptions.opts.series, 'series',
+            'Choose at least one series type')
         this.options.app.createLobby() if opts_valid
 
     changeOppRaces: =>
@@ -51,6 +68,12 @@ class window.CreateLobbyView extends Backbone.View
         checked = this.$('input[name="opp-leagues"]:checked')
         leagues = (c.value for c in checked)
         LobbyOptions.opts.opp_leagues = leagues
+        LobbyOptions.save()
+
+    changeSeries: =>
+        checked = this.$('input[name="series"]:checked')
+        series = (c.value for c in checked)
+        LobbyOptions.opts.series = series
         LobbyOptions.save()
 
 class window.LobbyView extends Backbone.View
