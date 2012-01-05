@@ -60,6 +60,33 @@
       <% } %>
   </div>
 
+%script#map-section-tmpl(type="text/template")
+
+%script#map-field-tmpl(type="text/template")
+  #maps-cf.clearfix
+    %label Maps
+    .input
+      %ul#map-tabs.tabs
+        <% for (var i=0; i<sections.length; i++) { %>
+        <li <% if (i==0) { %> class="active"<% } %>><a href="<%= '#maps-' + sections[i].name %>"><%= sections[i].label %></a></li>
+        <% } %>
+      .tab-content
+        <% for (var s=0; s<sections.length; s++) { sec = sections[s]; %>
+        <% var half = Math.ceil(sec.maps.length/2); %>
+        <div id="<%= 'maps-' + sec.name %>" class="row<% if (s==0) { %> active<% } %>">
+        <% for (var c=0; c<2; c++) { %>
+        .span4
+          %ul.inputs-list
+            <% for (var i=c*half; i<Math.min((c+1)*half, sec.maps.length); i++) { %>
+            %li
+              %label
+                <input type="checkbox" name="maps" value="<%= sec.maps[i].val %>" <% if (checked.indexOf(sec.maps[i].val) != -1) { %>checked="checked"<% } %>/>
+                %span <%= sec.maps[i].label %>
+            <% } %>
+        <% } %>
+        </div>
+        <% } %>
+
 %script#create-lobby-tmpl(type="text/template")
   %form
     %fieldset

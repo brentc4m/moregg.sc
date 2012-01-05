@@ -6,6 +6,8 @@ class LobbyOptionsGlobal
     defaults:
         opp_races: ['r', 't', 'z', 'p']
         opp_leagues: []
+        maps: ['blz_ap', 'blz_as', 'blz_ev', 'blz_me', 'blz_sp', 'blz_tdale',
+            'blz_st', 'blz_xnc']
         series: ['bo1']
 
     constructor: ->

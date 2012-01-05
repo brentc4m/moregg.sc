@@ -10,6 +10,9 @@ leagueMatches = (p1, p2) ->
 seriesMatches = (p1, p2) ->
     return _.intersection(p1.series, p2.series).length > 0
 
+mapMatches = (p1, p2) ->
+    return _.intersection(p1.maps, p2.maps).length > 0
+
 paramsMatch = (p1, p2) ->
     if p1.region isnt p2.region
         return false
@@ -18,6 +21,8 @@ paramsMatch = (p1, p2) ->
     if not leagueMatches(p1, p2) or not leagueMatches(p2, p1)
         return false
     if not seriesMatches(p1, p2)
+        return false
+    if not mapMatches(p1, p2)
         return false
     return true
 
