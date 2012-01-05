@@ -110,6 +110,7 @@ LobbyManager = new LobbyManagerGlobal()
 setInterval(LobbyManager.matchmake, 5000)
 
 io = socketio.listen(5000)
+io.set('log level', 2)
 
 io.sockets.on('connection', (socket) ->
     socket.on('createLobby', (req, ack) ->
