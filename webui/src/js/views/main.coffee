@@ -18,7 +18,7 @@ class window.CGFView extends Backbone.View
         if not CurrentUser.logged_in
             @login_view.show()
 
-    login: (profile_url, char_code) =>
+    login: (profile_url, char_code, league, race) =>
         login_valid = true
         uri = new Uri(profile_url)
         region = @BNET_REGIONS[uri.host()]
@@ -38,10 +38,11 @@ class window.CGFView extends Backbone.View
             @login_view.error('char-code',
                 'Character code must contain only 3 digits')
         if login_valid
-            CurrentUser.login(profile_url, region, name, char_code)
+            CurrentUser.login(profile_url, region, name, char_code, league, race)
             @login_view.hide()
 
     createLobby: =>
+        @user_details_view.preventChanges()
         @create_lobby_view.hide()
         @lobby_view.show()
         GameServer.createLobby()
@@ -50,17 +51,20 @@ class window.CGFView extends Backbone.View
         GameServer.exitLobby()
         @lobby_view.hide()
         @create_lobby_view.show()
+        @user_details_view.allowChanges()
 
 class window.LoginView extends Backbone.View
     id: 'login-view'
 
     events:
-        'keypress #profile-url': 'loginOnEnter'
-        'keypress #char-code': 'loginOnEnter'
+        'keypress input': 'loginOnEnter'
         'click #login-btn': 'login'
 
     show: =>
-        $(@el).html(render('login-form'))
+        $(@el).html(render('login-form',
+            leagues: LEAGUE_OPTS
+            races: RACE_OPTS
+        ))
         $('body').append(@el)
 
     hide: =>
@@ -70,16 +74,18 @@ class window.LoginView extends Backbone.View
         this.$('.clearfix').removeClass('error')
         this.$('input').removeClass('error')
         this.$('.help-inline').remove()
-        profile_url = this.$('#profile-url').val()
-        char_code = this.$('#char-code').val()
-        @options.app.login(profile_url, char_code)
+        profile_url = this.$('#login-profile-url').val()
+        char_code = this.$('#login-char-code').val()
+        league = this.$('#login-league option:selected').val()
+        race = this.$('#login-race option:selected').val()
+        @options.app.login(profile_url, char_code, league, race)
 
     loginOnEnter: (e) =>
         this.login() if e.keyCode is 13
 
     error: (field, msg) =>
-        this.$('#' + field + '-cf').addClass('error')
-        input = this.$('#' + field)
+        this.$('#login-' + field + '-cf').addClass('error')
+        input = this.$('#login-' + field)
         input.addClass('error')
         input.after(render('form-error', {msg: msg}))
 
@@ -129,3 +135,9 @@ class window.UserDetailsView extends Backbone.View
     changeLeague: =>
         league = this.$('#league-select option:selected').val()
         CurrentUser.changeLeague(league)
+
+    preventChanges: =>
+        this.$('select').attr('disabled', 'disabled')
+
+    allowChanges: =>
+        this.$('select').removeAttr('disabled')

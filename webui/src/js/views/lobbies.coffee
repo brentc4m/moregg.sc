@@ -82,7 +82,10 @@ class window.CreateLobbyView extends Backbone.View
         'change input[name="maps"]': 'changeMaps'
         'change input[name="series"]': 'changeSeries'
 
-    show: =>
+    initialize: =>
+        LobbyOptions.bind('change', @render)
+
+    render: =>
         fields = render('checkbox-group',
             name: 'opp-leagues'
             label: "Opponent's league"
@@ -107,6 +110,9 @@ class window.CreateLobbyView extends Backbone.View
             checked: LobbyOptions.opts.maps
         )
         $(@el).html(render('create-lobby', {fields: fields}))
+
+    show: =>
+        this.render()
         $('#cgf-content').append(@el)
 
     hide: =>

@@ -2,7 +2,7 @@
 class window.Events
 Events.prototype extends Backbone.Events
 
-class LobbyOptionsGlobal
+class LobbyOptionsGlobal extends Events
     defaults:
         opp_races: ['r', 't', 'z', 'p']
         opp_leagues: []
@@ -20,6 +20,7 @@ class LobbyOptionsGlobal
 
     save: =>
         localStorage['cgf.lobby_options'] = JSON.stringify(@opts)
+        this.trigger('change')
 
     clear: =>
         delete localStorage['cgf.lobby_options']
@@ -54,14 +55,16 @@ class CurrentUserGlobal extends Events
         for attr in @attrs
             localStorage['cgf.' + attr] = this[attr]
 
-    login: (profile_url, region, name, char_code) =>
+    login: (profile_url, region, name, char_code, league, race) =>
         @name = name
         @char_code = char_code
         @profile_url = profile_url
         @region = region
-        @race = 'random'
-        @league = 'bronze'
+        @race = race
+        @league = league
         this.saveAttrs()
+        LobbyOptions.opts.opp_leagues = [league]
+        LobbyOptions.save()
         localStorage['cgf.logged_in'] = 'true'
         @logged_in = true
         this.trigger('change')

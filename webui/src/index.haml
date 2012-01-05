@@ -36,14 +36,28 @@
       %form
         %fieldset
           %legend Enter your Battle.net details
-          #profile-url-cf.clearfix
-            %label(for="profile-url") Profile URL
+          #login-profile-url-cf.clearfix
+            %label(for="login-profile-url") Profile URL
             .input
-              %input#profile-url.xlarge(type="text")/
-          #char-code-cf.clearfix
-            %label(for="char-code") Character Code
+              %input#login-profile-url.xlarge(type="text")/
+          #login-char-code-cf.clearfix
+            %label(for="login-char-code") Character Code
             .input
-              %input#char-code.mini(type="text" maxlength=3)/
+              %input#login-char-code.mini(type="text" maxlength=3)/
+          #login-league-cf.clearfix
+            %label(for="login-league") League
+            .input
+              %select#login-league.medium
+                <% for (var i=0; i<leagues.length; i++) { %>
+                <option value="<%= leagues[i].val %>"><%= leagues[i].label %></option>
+                <% } %>
+          #login-race-cf.clearfix
+            %label(for="login-race") Race
+            .input
+              %select#login-race.medium
+                <% for (var i=0; i<races.length; i++) { %>
+                <option value="<%= races[i].val %>"><%= races[i].label %></option>
+                <% } %>
     .modal-footer
       %button#login-btn.btn.primary Login
 
