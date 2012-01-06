@@ -2,47 +2,45 @@ socketio = require('socket.io')
 _ = require('underscore')
 
 raceMatches = (p1, p2) ->
-    return p2.race in p1.opp_races
+    return p2.race in p1.params.opp_races
 
 leagueMatches = (p1, p2) ->
-    return p2.league in p1.opp_leagues
+    return p2.league in p1.params.opp_leagues
 
 seriesMatches = (p1, p2) ->
-    return _.intersection(p1.series, p2.series)
+    return _.intersection(p1.params.series, p2.params.series)
 
 mapMatches = (p1, p2) ->
-    return _.intersection(p1.maps, p2.maps)
-
-paramsMatch = (p1, p2) ->
-    if p1.region isnt p2.region
-        return false
-    if not raceMatches(p1, p2) or not raceMatches(p2, p1)
-        return false
-    if not leagueMatches(p1, p2) or not leagueMatches(p2, p1)
-        return false
-    series = seriesMatches(p1, p2)
-    return false if series.length is 0
-    maps = mapMatches(p1, p2)
-    return false if maps.length is 0
-    return {series: series, maps: maps}
+    return _.intersection(p1.params.maps, p2.params.maps)
 
 class Player
-    constructor: (socket, name, char_code, profile_url, params) ->
+    constructor: (socket, request) ->
+        _.extend(this, request)
         @socket = socket
         @id = socket.id
-        @name = name
-        @char_code = char_code
-        @profile_url = profile_url
-        @params = params
 
-    matches: (other_player) =>
-        return paramsMatch(@params, other_player.params)
+    matches: (p2) =>
+        p1 = this
+        if p1.region isnt p2.region
+            return false
+        if not raceMatches(p1, p2) or not raceMatches(p2, p1)
+            return false
+        if not leagueMatches(p1, p2) or not leagueMatches(p2, p1)
+            return false
+        series = seriesMatches(p1, p2)
+        return false if series.length is 0
+        maps = mapMatches(p1, p2)
+        return false if maps.length is 0
+        return {series: series, maps: maps}
 
     toJSON: =>
         id: @id
         name: @name
         char_code: @char_code
         profile_url: @profile_url
+        region: @region
+        league: @league
+        race: @race
 
 class Lobby
     constructor: (player) ->
@@ -119,8 +117,7 @@ io.set('log level', 2)
 
 io.sockets.on('connection', (socket) ->
     socket.on('createLobby', (req, ack) ->
-        player = new Player(socket, req.name, req.char_code, req.profile_url,
-            req.params)
+        player = new Player(socket, req)
         LobbyManager.addPlayer(player)
         ack()
     )

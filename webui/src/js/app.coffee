@@ -40,6 +40,9 @@ class CurrentUserGlobal extends Events
         name: @name
         char_code: @char_code
         profile_url: @profile_url
+        region: @region
+        league: @league
+        race: @race
 
     logout: =>
         for attr in @attrs
@@ -82,15 +85,8 @@ class GameServerGlobal extends Events
         @socket = io.connect('http://localhost:5000')
 
     createLobby: =>
-        params = _.clone(LobbyOptions.opts)
-        params.region = CurrentUser.region
-        params.race = CurrentUser.race
-        params.league = CurrentUser.league
-        request =
-            name: CurrentUser.name
-            char_code: CurrentUser.char_code
-            profile_url: CurrentUser.profile_url
-            params: params
+        request = CurrentUser.toJSON()
+        request.params = LobbyOptions.opts
         @socket.on('playerJoined', (d) => this.trigger('playerJoined', d))
         @socket.on('playerLeft', (d) => this.trigger('playerLeft', d))
         @socket.on('chatReceived', (d) => this.trigger('chatReceived', d))

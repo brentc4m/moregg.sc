@@ -127,7 +127,7 @@
     <% } %>
 
 %script#player-link-tmpl(type="text/template")<
-  <a target="_blank" href="<%= player.profile_url %>"><%= player.name + '.' + player.char_code %></a>
+  <b><%= player.league + ' ' + player.race %></b> <a target="_blank" href="<%= player.profile_url %>"><%= player.name + '.' + player.char_code %></a>
 
 %script#chat-msg-tmpl(type="text/template")
   %li <%= timestamp %> <%= msg %>
