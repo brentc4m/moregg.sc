@@ -71,6 +71,10 @@ window.MAPS = [
     ]}
 ]
 
+window.MAP_LABELS = {}
+for map in _.flatten(_.pluck(MAPS, 'maps'))
+    MAP_LABELS[map.val] = map.label
+
 class window.CreateLobbyView extends Backbone.View
     id: 'create-lobby-view'
 
@@ -81,9 +85,6 @@ class window.CreateLobbyView extends Backbone.View
         'change input[name="opp-leagues"]': 'changeOppLeagues'
         'change input[name="maps"]': 'changeMaps'
         'change input[name="series"]': 'changeSeries'
-
-    initialize: =>
-        LobbyOptions.bind('change', @render)
 
     render: =>
         fields = render('checkbox-group',
@@ -183,6 +184,7 @@ class window.LobbyView extends Backbone.View
         GameServer.bind('playerJoined', this.playerJoined)
         GameServer.bind('playerLeft', this.playerLeft)
         GameServer.bind('chatReceived', this.chatReceived)
+        GameServer.bind('lobbyFinished', this.lobbyFinished)
     
     render: =>
         $(@el).html(render('lobby'))
@@ -252,3 +254,13 @@ class window.LobbyView extends Backbone.View
 
     exitLobby: =>
         this.options.app.exitLobby()
+
+    lobbyFinished: (game_info) =>
+        series = _.filter(SERIES_OPTS, (s) -> s.val in game_info.series)
+        series = _.pluck(series, 'label')
+        series = series.join(', ')
+        maps = (MAP_LABELS[m] for m in game_info.maps).join(', ')
+        this.addMsg('Lobby complete!')
+        this.addMsg('Series type: ' + series)
+        this.addMsg('Maps: ' + maps)
+        this.addMsg('First map: ' + MAP_LABELS[game_info.random_map])

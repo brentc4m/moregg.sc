@@ -2,7 +2,7 @@
 class window.Events
 Events.prototype extends Backbone.Events
 
-class LobbyOptionsGlobal extends Events
+class LobbyOptionsGlobal
     defaults:
         opp_races: ['r', 't', 'z', 'p']
         opp_leagues: []
@@ -20,7 +20,6 @@ class LobbyOptionsGlobal extends Events
 
     save: =>
         localStorage['cgf.lobby_options'] = JSON.stringify(@opts)
-        this.trigger('change')
 
     clear: =>
         delete localStorage['cgf.lobby_options']
@@ -95,6 +94,7 @@ class GameServerGlobal extends Events
         @socket.on('playerJoined', (d) => this.trigger('playerJoined', d))
         @socket.on('playerLeft', (d) => this.trigger('playerLeft', d))
         @socket.on('chatReceived', (d) => this.trigger('chatReceived', d))
+        @socket.on('lobbyFinished', (d) => this.trigger('lobbyFinished', d))
         @socket.emit('createLobby', request, => this.trigger('lobbyCreated'))
 
     sendChat: (msg) =>
@@ -105,6 +105,7 @@ class GameServerGlobal extends Events
         @socket.removeAllListeners('playerJoined')
         @socket.removeAllListeners('playerLeft')
         @socket.removeAllListeners('chatReceived')
+        @socket.removeAllListeners('lobbyFinished')
         @socket.emit('exitLobby')
 window.GameServer = new GameServerGlobal()
 

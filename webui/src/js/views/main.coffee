@@ -39,6 +39,7 @@ class window.CGFView extends Backbone.View
                 'Character code must contain only 3 digits')
         if login_valid
             CurrentUser.login(profile_url, region, name, char_code, league, race)
+            @create_lobby_view.render()
             @login_view.hide()
 
     createLobby: =>

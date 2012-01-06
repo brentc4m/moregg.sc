@@ -8,10 +8,10 @@ leagueMatches = (p1, p2) ->
     return p2.league in p1.opp_leagues
 
 seriesMatches = (p1, p2) ->
-    return _.intersection(p1.series, p2.series).length > 0
+    return _.intersection(p1.series, p2.series)
 
 mapMatches = (p1, p2) ->
-    return _.intersection(p1.maps, p2.maps).length > 0
+    return _.intersection(p1.maps, p2.maps)
 
 paramsMatch = (p1, p2) ->
     if p1.region isnt p2.region
@@ -20,11 +20,11 @@ paramsMatch = (p1, p2) ->
         return false
     if not leagueMatches(p1, p2) or not leagueMatches(p2, p1)
         return false
-    if not seriesMatches(p1, p2)
-        return false
-    if not mapMatches(p1, p2)
-        return false
-    return true
+    series = seriesMatches(p1, p2)
+    return false if series.length is 0
+    maps = mapMatches(p1, p2)
+    return false if maps.length is 0
+    return {series: series, maps: maps}
 
 class Player
     constructor: (socket, name, char_code, profile_url, params) ->
@@ -55,10 +55,15 @@ class Lobby
 
     match: (other_lobby) =>
         return false if this.finished() or other_lobby.finished()
-        return false if not @players[0].matches(other_lobby.players[0])
+        match = @players[0].matches(other_lobby.players[0])
+        return unless match
         @players.push(other_lobby.players[0])
         @players[0].socket.emit('playerJoined', @players[1])
         @players[1].socket.emit('playerJoined', @players[0])
+        if this.finished()
+            match.random_map = match.maps[Math.floor(
+                Math.random()*match.maps.length)]
+            p.socket.emit('lobbyFinished', match) for p in @players
 
     finished: =>
         return @players.length is 2
