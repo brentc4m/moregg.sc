@@ -10,6 +10,7 @@ class window.CGFView extends Backbone.View
         @login_view = new LoginView({app: this})
         @user_details_view = new UserDetailsView({app: this})
         @create_lobby_view = new CreateLobbyView({app: this})
+        @list_lobbies_view = new ListLobbiesView({app: this})
         @lobby_view = new LobbyView({app: this})
 
     render: =>
@@ -36,14 +37,35 @@ class window.CGFView extends Backbone.View
     createLobby: =>
         @user_details_view.preventChanges()
         @create_lobby_view.hide()
+        @lobby_view.reset()
         @lobby_view.show()
         GameServer.createLobby()
+
+    listLobbies: =>
+        @user_details_view.preventChanges()
+        @create_lobby_view.hide()
+        @list_lobbies_view.show()
+        GameServer.listLobbies()
 
     exitLobby: =>
         GameServer.exitLobby()
         @lobby_view.hide()
         @create_lobby_view.show()
         @user_details_view.allowChanges()
+
+    exitLobbiesList: =>
+        @list_lobbies_view.hide()
+        @create_lobby_view.show()
+        @user_details_view.allowChanges()
+
+    joinLobby: (id) =>
+        @lobby_view.reset()
+        GameServer.joinLobby(id, (err) =>
+            if (err)
+                return @list_lobbies_view.errorJoining(err, id)
+            @list_lobbies_view.hide()
+            @lobby_view.show()
+        )
 
 class window.LoginView extends Backbone.View
     id: 'login-view'

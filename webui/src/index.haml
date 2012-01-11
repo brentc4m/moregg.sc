@@ -102,7 +102,34 @@
       %legend Game options
       <%= fields %>
       .actions
-        %button#create-lobby-btn.btn.primary(type="button") Create Lobby
+        %button#create-lobby-btn.btn.primary(type="button") Find Game
+        %button#list-lobbies-btn.btn(type="button") List Games
+
+%script#list-lobbies-tmpl(type="text/template")
+  <% if (lobbies === null) { %>
+  <p>Please wait..</p>
+  <% } else if (lobbies.length == 0) { %>
+  <p>No games found.</p>
+  <% } else { %>
+  <% for (var i=0; i<lobbies.length; i++) { %>
+  <div id="lobby-<%= lobbies[i].id %>" class="alert-message block-message info">
+  %p
+    %strong League
+    <%= lobbies[i].league %>
+    %strong Race
+    <%= lobbies[i].race %>
+    %strong Series
+    <%= lobbies[i].params.series %>
+  %p
+    %strong Maps
+    <%= lobbies[i].params.maps %>
+  %br/
+  <a href="#<%= lobbies[i].id %>" class="btn primary">Join</a>
+  </div>
+  <% } %>
+  <% } %>
+  .actions
+    %button#exit-lobbies-list-btn.btn.primary(type="button") Back
 
 %script#lobby-tmpl(type="text/template")
   .row
@@ -129,3 +156,8 @@
 
 %script#form-error-tmpl(type="text/template")
   %span.help-inline <%= msg %>
+
+%script#alert-message-tmpl(type="text/template")
+  <div id="lobby-error" class="alert-message <%= type %>">
+  %p <%= msg %>
+  </div>

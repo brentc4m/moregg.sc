@@ -79,29 +79,41 @@ window.CurrentUser = new CurrentUserGlobal()
 class GameServerGlobal extends Events
     constructor: ->
         @socket = io.connect('http://localhost:5000')
-
-    getUserProfile: (profile_url, cb) =>
-        @socket.emit('getUserProfile', profile_url, cb)
-
-    createLobby: =>
-        request = CurrentUser.toJSON()
-        delete request.league # server determines league
-        request.params = LobbyOptions.opts
         @socket.on('playerJoined', (d) => this.trigger('playerJoined', d))
         @socket.on('playerLeft', (d) => this.trigger('playerLeft', d))
         @socket.on('chatReceived', (d) => this.trigger('chatReceived', d))
         @socket.on('lobbyFinished', (d) => this.trigger('lobbyFinished', d))
-        @socket.emit('createLobby', request, => this.trigger('lobbyCreated'))
+
+    getUserProfile: (profile_url, cb) =>
+        @socket.emit('getUserProfile', profile_url, cb)
+
+    _getLobbyRequest: =>
+        request = CurrentUser.toJSON()
+        delete request.league # server determines league
+        request.params = LobbyOptions.opts
+        return request
+
+    createLobby: =>
+        request = this._getLobbyRequest()
+        @socket.emit('createLobby', request, => this.trigger('lobbyJoined'))
+
+    joinLobby: (id, cb) =>
+        request = this._getLobbyRequest()
+        request.params.lobby_id = id
+        @socket.emit('joinLobby', request, (err) =>
+            return cb(err) if err
+            this.trigger('lobbyJoined')
+            cb()
+        )
+
+    listLobbies: =>
+        request = this._getLobbyRequest()
+        @socket.emit('listLobbies', request, (l) => this.trigger('lobbiesListed', l))
 
     sendChat: (msg) =>
         @socket.emit('sendChat', msg)
 
     exitLobby: =>
-        @socket.removeAllListeners('lobbyCreated')
-        @socket.removeAllListeners('playerJoined')
-        @socket.removeAllListeners('playerLeft')
-        @socket.removeAllListeners('chatReceived')
-        @socket.removeAllListeners('lobbyFinished')
         @socket.emit('exitLobby')
 window.GameServer = new GameServerGlobal()
 

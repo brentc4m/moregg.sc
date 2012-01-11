@@ -80,6 +80,7 @@ class window.CreateLobbyView extends Backbone.View
 
     events:
         'click #create-lobby-btn': 'createLobby'
+        'click #list-lobbies-btn': 'listLobbies'
         'click #map-tabs li a': 'changeMapsTab'
         'change input[name="opp-races"]': 'changeOppRaces'
         'change input[name="opp-leagues"]': 'changeOppLeagues'
@@ -127,7 +128,7 @@ class window.CreateLobbyView extends Backbone.View
             return false
         return true
 
-    createLobby: =>
+    validateOptions: =>
         this.$('.clearfix').removeClass('error')
         this.$('.help-inline').remove()
         opts_valid = true
@@ -139,7 +140,13 @@ class window.CreateLobbyView extends Backbone.View
             'Choose at least one series type')
         opts_valid &= this.validate(LobbyOptions.opts.maps, 'maps',
             'Choose at least one map')
-        this.options.app.createLobby() if opts_valid
+        return opts_valid
+
+    createLobby: =>
+        this.options.app.createLobby() if this.validateOptions()
+
+    listLobbies: =>
+        this.options.app.listLobbies() if this.validateOptions()
 
     changeOppRaces: =>
         checked = this.$('input[name="opp-races"]:checked')
@@ -172,6 +179,49 @@ class window.CreateLobbyView extends Backbone.View
         this.$('.tab-content div.active').removeClass('active')
         this.$(e.target.hash).addClass('active')
 
+class window.ListLobbiesView extends Backbone.View
+    id: 'list-lobbies-view'
+
+    events:
+        'click a': 'joinLobby'
+        'click #exit-lobbies-list-btn': 'exit'
+
+    initialize: =>
+        @lobbies = null
+        GameServer.bind('lobbiesListed', this.lobbiesListed)
+
+    render: =>
+        $(@el).html(render('list-lobbies', {lobbies: @lobbies}))
+
+    show: =>
+        this.render()
+        $('#cgf-content').append(@el)
+
+    hide: =>
+        $(@el).detach()
+
+    exit: =>
+        this.options.app.exitLobbiesList()
+
+    lobbiesListed: (lobbies) =>
+        for l in lobbies
+            l.params.maps = (MAP_LABELS[m] for m in l.params.maps).join(', ')
+            series = _.filter(SERIES_OPTS, (s) -> s.val in l.params.series)
+            l.params.series = _.pluck(series, 'label').join(', ')
+        @lobbies = lobbies
+        this.render()
+
+    joinLobby: (e) =>
+        e.preventDefault()
+        this.$('#lobby-error').remove()
+        lobby_id = e.target.hash.slice(1)
+        this.options.app.joinLobby(lobby_id)
+
+    errorJoining: (err, id) =>
+        lobby = this.$('#lobby-' + id)
+        lobby.before(render('alert-message', {type: 'error', msg: err}))
+        lobby.remove()
+
 class window.LobbyView extends Backbone.View
     id: 'lobby-view'
 
@@ -180,14 +230,17 @@ class window.LobbyView extends Backbone.View
         'click #exit-lobby-btn': 'exitLobby'
 
     initialize: =>
-        GameServer.bind('lobbyCreated', this.lobbyCreated)
+        GameServer.bind('lobbyJoined', this.lobbyJoined)
         GameServer.bind('playerJoined', this.playerJoined)
         GameServer.bind('playerLeft', this.playerLeft)
         GameServer.bind('chatReceived', this.chatReceived)
         GameServer.bind('lobbyFinished', this.lobbyFinished)
     
-    render: =>
+    reset: =>
+        @players = []
+        @lobby_id = null
         $(@el).html(render('lobby'))
+        this.addMsg('Joining lobby..')
 
     renderPlayers: =>
         this.$('#user-list').html(render('lobby-players',
@@ -197,13 +250,8 @@ class window.LobbyView extends Backbone.View
         ))
 
     show: =>
-        @players = []
-        @lobby_id = null
-
-        this.render()
         $('#cgf-content').append(@el)
         this.$('#msg-box').focus()
-        this.addMsg('Creating lobby..')
 
     hide: =>
         $(@el).detach()
@@ -225,12 +273,12 @@ class window.LobbyView extends Backbone.View
             timestamp: timestamp
             msg: msg
         ))
-        box = $('#chat-box')
+        box = this.$('#chat-box')
         box.scrollTop(box[0].scrollHeight)
 
-    lobbyCreated: =>
+    lobbyJoined: =>
         @lobby_id = GameServer.socket.id
-        this.addMsg('Lobby created')
+        this.addMsg('Lobby joined')
         curr_player = CurrentUser.toJSON()
         curr_player.id = @lobby_id
         this.playerJoined(curr_player)

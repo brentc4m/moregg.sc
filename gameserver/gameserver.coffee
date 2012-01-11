@@ -1,6 +1,7 @@
 pg = require('pg')
 request = require('request')
 socketio = require('socket.io')
+util = require('util')
 _ = require('underscore')
 
 raceMatches = (p1, p2) ->
@@ -43,6 +44,7 @@ class Player
         region: @region
         league: @league
         race: @race
+        params: @params
 
 class Lobby
     constructor: (player) ->
@@ -53,9 +55,12 @@ class Lobby
         for player in @players
             player.socket.emit('playerLeft', id)
 
-    match: (other_lobby) =>
+    matches: (other_lobby) =>
         return false if this.finished() or other_lobby.finished()
-        match = @players[0].matches(other_lobby.players[0])
+        return @players[0].matches(other_lobby.players[0])
+
+    match: (other_lobby) =>
+        match = this.matches(other_lobby)
         return unless match
         @players.push(other_lobby.players[0])
         @players[0].socket.emit('playerJoined', @players[1])
@@ -86,13 +91,12 @@ class LobbyManagerGlobal
     removePlayer: (id) =>
         return unless id of @lobbies_by_id
         lobby = @lobbies_by_id[id]
-        if lobby.players.length > 1
-            if lobby.finished()
-                @pending_lobbies.push(lobby)
+        if lobby.finished()
             lobby.removePlayer(id)
+            @pending_lobbies.push(lobby)
         else
-            delete @lobbies_by_id[id]
             @pending_lobbies = _.without(@pending_lobbies, lobby)
+        delete @lobbies_by_id[id]
 
     matchmake: =>
         new_pending = []
@@ -111,6 +115,22 @@ class LobbyManagerGlobal
 
     sendChat: (id, text) =>
         @lobbies_by_id[id].sendChat(id, text)
+
+    getMatchingLobbies: (player) =>
+        fake_lobby = new Lobby(player)
+        return (l.players[0] for l in @pending_lobbies when l.matches(fake_lobby))
+    
+    joinLobby: (player, cb) =>
+        new_lobby = new Lobby(player)
+        lobby_to_join = @lobbies_by_id[player.params.lobby_id]
+        if lobby_to_join? and lobby_to_join.matches(new_lobby)
+            cb()
+            lobby_to_join.match(new_lobby)
+            @lobbies_by_id[player.id] = lobby_to_join
+            @pending_lobbies = _.without(@pending_lobbies, lobby_to_join)
+        else
+            cb('Lobby unavailable, please try another.')
+
 LobbyManager = new LobbyManagerGlobal()
 setInterval(LobbyManager.matchmake, 5000)
 
@@ -202,11 +222,28 @@ io.sockets.on('connection', (socket) ->
     )
     socket.on('createLobby', (req, cb) ->
         UserProfiles.get(req.profile_url, (err, profile) ->
-            return cb(err) if err
+            return if err
             req.league = profile.league
             player = new Player(socket, req)
             LobbyManager.addPlayer(player)
             cb()
+        )
+    )
+    socket.on('listLobbies', (req, cb) ->
+        UserProfiles.get(req.profile_url, (err, profile) ->
+            return if err
+            req.league = profile.league
+            player = new Player(socket, req)
+            lobbies = LobbyManager.getMatchingLobbies(player)
+            cb(lobbies)
+        )
+    )
+    socket.on('joinLobby', (req, cb) ->
+        UserProfiles.get(req.profile_url, (err, profile) ->
+            return if err
+            req.league = profile.league
+            player = new Player(socket, req)
+            LobbyManager.joinLobby(player, cb)
         )
     )
     socket.on('sendChat', (text) ->
