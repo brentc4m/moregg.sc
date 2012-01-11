@@ -1,3 +1,4 @@
+pg = require('pg')
 request = require('request')
 socketio = require('socket.io')
 _ = require('underscore')
@@ -125,16 +126,42 @@ class UserProfilesGlobal
         'grandmaster': 'gm'
 
     constructor: ->
-        @users = {}
+        @client = new pg.Client('tcp://postgres:pgpass1@localhost/cgf')
+        @client.connect()
 
     get: (profile_url, cb) =>
-        if profile_url of @users
-            return cb(null, @users[profile_url])
-        this._scrape(profile_url, (err, profile) =>
+        this._getFromDB(profile_url, (err, profile) =>
             return cb(err) if err
-            @users[profile_url] = profile
-            cb(null, profile)
+            return cb(null, profile) if profile isnt null
+            this._scrape(profile_url, (err, profile) =>
+                return cb(err) if err
+                this._putInDB(profile_url, profile)
+                cb(null, profile)
+            )
         )
+
+    _getFromDB: (profile_url, cb) =>
+        @client.query({
+            name: 'get',
+            text: 'SELECT region, name, league FROM profiles WHERE url = $1',
+            values: [profile_url]
+        }, (err, result) =>
+            if err
+                console.log(err)
+                return cb('Temporary error, try again later')
+            if result.rows.length is 0
+                cb(null, null)
+            else
+                row = result.rows[0]
+                cb(null, {region: row.region, name: row.name, league: row.league})
+        )
+
+    _putInDB: (profile_url, profile) =>
+        @client.query({
+            name: 'put',
+            text: 'INSERT INTO profiles (url, region, name, league) VALUES ($1, $2, $3, $4)',
+            values: [profile_url, profile.region, profile.name, profile.league]
+        })
 
     _scrape: (profile_url, cb) =>
         error = 'Bad profile URL or an error occurred, try again.'
