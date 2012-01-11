@@ -1,3 +1,4 @@
+request = require('request')
 socketio = require('socket.io')
 _ = require('underscore')
 
@@ -112,14 +113,74 @@ class LobbyManagerGlobal
 LobbyManager = new LobbyManagerGlobal()
 setInterval(LobbyManager.matchmake, 5000)
 
+class UserProfilesGlobal
+    LEAGUES:
+        'none': 'n'
+        'bronze': 'b'
+        'silver': 's'
+        'gold': 'g'
+        'platinum': 'p'
+        'diamond': 'd'
+        'master': 'm'
+        'grandmaster': 'gm'
+
+    constructor: ->
+        @users = {}
+
+    get: (profile_url, cb) =>
+        if profile_url of @users
+            return cb(null, @users[profile_url])
+        this._scrape(profile_url, (err, profile) =>
+            return cb(err) if err
+            @users[profile_url] = profile
+            cb(null, profile)
+        )
+
+    _scrape: (profile_url, cb) =>
+        error = 'Bad profile URL or an error occurred, try again.'
+        if profile_url.indexOf('http://us.battle.net') is 0
+            region = 'AM'
+        else if profile_url.indexOf('http://kr.battle.net') is 0
+            region = 'KR'
+        else if profile_url.indexOf('http://www.battlenet.com.cn') is 0
+            region = 'CN'
+        else if profile_url.indexOf('http://sea.battle.net') is 0
+            region = 'SEA'
+        else if profile_url.indexOf('http://eu.battle.net') is 0
+            region = 'EU'
+        else
+            return cb(error)
+        request(profile_url, (err, res, body) =>
+            return cb(err) if err
+            return cb(error) if res.statusCode isnt 200
+
+            match = body.match(/<title>(\S+)/)
+            return cb(error) if match is null
+            name = match[1]
+
+            match = body.match(/#best-team-1[\s\S]+?badge-(\w+)/)
+            league = if match is null then 'none' else match[1]
+            return cb('Error parsing league, please report') if not league of @LEAGUES
+            league = @LEAGUES[league]
+            cb(null, {region: region, name: name, league: league})
+        )
+UserProfiles = new UserProfilesGlobal()
+
 io = socketio.listen(5000)
 io.set('log level', 2)
 
 io.sockets.on('connection', (socket) ->
-    socket.on('createLobby', (req, ack) ->
-        player = new Player(socket, req)
-        LobbyManager.addPlayer(player)
-        ack()
+    socket.on('getUserProfile', (profile_url, cb) ->
+        UserProfiles.get(profile_url, cb)
+    )
+    socket.on('createLobby', (req, cb) ->
+        UserProfiles.get(req.profile_url, (err, profile) ->
+            return cb(err) if err
+            req.league = profile.league
+            player = new Player(socket, req)
+            LobbyManager.addPlayer(player)
+            cb()
+        )
     )
     socket.on('sendChat', (text) ->
         LobbyManager.sendChat(socket.id, text)

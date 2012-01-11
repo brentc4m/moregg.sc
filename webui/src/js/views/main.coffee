@@ -18,29 +18,20 @@ class window.CGFView extends Backbone.View
         if not CurrentUser.logged_in
             @login_view.show()
 
-    login: (profile_url, char_code, league, race) =>
+    login: (profile_url, char_code, race) =>
         login_valid = true
-        uri = new Uri(profile_url)
-        region = @BNET_REGIONS[uri.host()]
-        if not region?
-            login_valid = false
-            @login_view.error('profile-url', 'Bad URL')
-        else
-            name = _(uri.path().split('/')).chain()
-                .without('')
-                .last()
-                .value()
-            if not name?
-                login_valid = false
-                @login_view.error('profile-url', 'Bad URL')
         if not char_code or /\D/.test(char_code)
             login_valid = false
             @login_view.error('char-code',
                 'Character code must contain only 3 digits')
         if login_valid
-            CurrentUser.login(profile_url, region, name, char_code, league, race)
-            @create_lobby_view.render()
-            @login_view.hide()
+            GameServer.getUserProfile(profile_url, (err, profile) =>
+                return @login_view.error('profile-url', err) if err
+                CurrentUser.login(profile_url, profile.region, profile.name,
+                    char_code, profile.league, race)
+                @create_lobby_view.render()
+                @login_view.hide()
+            )
 
     createLobby: =>
         @user_details_view.preventChanges()
@@ -62,10 +53,7 @@ class window.LoginView extends Backbone.View
         'click #login-btn': 'login'
 
     show: =>
-        $(@el).html(render('login-form',
-            leagues: LEAGUE_OPTS
-            races: RACE_OPTS
-        ))
+        $(@el).html(render('login-form', races: RACE_OPTS))
         $('body').append(@el)
 
     hide: =>
@@ -77,9 +65,8 @@ class window.LoginView extends Backbone.View
         this.$('.help-inline').remove()
         profile_url = this.$('#login-profile-url').val()
         char_code = this.$('#login-char-code').val()
-        league = this.$('#login-league option:selected').val()
         race = this.$('#login-race option:selected').val()
-        @options.app.login(profile_url, char_code, league, race)
+        @options.app.login(profile_url, char_code, race)
 
     loginOnEnter: (e) =>
         this.login() if e.keyCode is 13
@@ -96,7 +83,6 @@ class window.UserDetailsView extends Backbone.View
     events:
         'click #logout-btn': 'logout'
         'change #race-select': 'changeRace'
-        'change #league-select': 'changeLeague'
 
     initialize: =>
         CurrentUser.bind('change', @render)
@@ -104,12 +90,6 @@ class window.UserDetailsView extends Backbone.View
     render: =>
         selects = ''
         if CurrentUser.logged_in
-            selects += render('user-select',
-                id: 'league'
-                label: 'League'
-                selected: CurrentUser.league
-                opts: LEAGUE_OPTS
-            )
             selects += render('user-select',
                 id: 'race'
                 label: 'Race'
@@ -132,10 +112,6 @@ class window.UserDetailsView extends Backbone.View
     changeRace: =>
         race = this.$('#race-select option:selected').val()
         CurrentUser.changeRace(race)
-
-    changeLeague: =>
-        league = this.$('#league-select option:selected').val()
-        CurrentUser.changeLeague(league)
 
     preventChanges: =>
         this.$('select').attr('disabled', 'disabled')

@@ -21,6 +21,8 @@
   %dl
     %dt Region
     %dd <%= user.region %>
+    %dt League
+    %dd <%= user.league %>
     <%= selects %>
   %button#logout-btn.btn.primary Logout
   <% } else { %>
@@ -44,13 +46,6 @@
             %label(for="login-char-code") Character Code
             .input
               %input#login-char-code.mini(type="text" maxlength=3)/
-          #login-league-cf.clearfix
-            %label(for="login-league") League
-            .input
-              %select#login-league.medium
-                <% for (var i=0; i<leagues.length; i++) { %>
-                <option value="<%= leagues[i].val %>"><%= leagues[i].label %></option>
-                <% } %>
           #login-race-cf.clearfix
             %label(for="login-race") Race
             .input

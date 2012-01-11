@@ -74,18 +74,18 @@ class CurrentUserGlobal extends Events
     changeRace: (race) =>
         @race = race
         this.saveAttrs()
-
-    changeLeague: (league) =>
-        @league = league
-        this.saveAttrs()
 window.CurrentUser = new CurrentUserGlobal()
 
 class GameServerGlobal extends Events
     constructor: ->
         @socket = io.connect('http://localhost:5000')
 
+    getUserProfile: (profile_url, cb) =>
+        @socket.emit('getUserProfile', profile_url, cb)
+
     createLobby: =>
         request = CurrentUser.toJSON()
+        delete request.league # server determines league
         request.params = LobbyOptions.opts
         @socket.on('playerJoined', (d) => this.trigger('playerJoined', d))
         @socket.on('playerLeft', (d) => this.trigger('playerLeft', d))
