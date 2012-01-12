@@ -120,12 +120,13 @@ class LobbyManagerGlobal
         @pending_lobbies = new_pending
 
     sendChat: (id, text) =>
+        return unless id of @lobbies_by_id
         @lobbies_by_id[id].sendChat(id, text)
 
     getMatchingLobbies: (player) =>
         fake_lobby = new Lobby(player)
         return (l.players[0] for l in @pending_lobbies when l.matches(fake_lobby))
-    
+
     joinLobby: (player, cb) =>
         new_lobby = new Lobby(player)
         lobby_to_join = @lobbies_by_id[player.params.lobby_id]
@@ -138,7 +139,12 @@ class LobbyManagerGlobal
             cb('Lobby unavailable, please try another.')
 
 LobbyManager = new LobbyManagerGlobal()
-setInterval(LobbyManager.matchmake, 5000)
+setInterval(->
+    try
+        LobbyManager.matchmake()
+    catch err
+        console.log('Exception: ' + err)
+, 5000)
 
 class UserProfilesGlobal
     LEAGUES:
@@ -228,37 +234,55 @@ io.sockets.on('connection', (socket) ->
     )
     socket.on('createLobby', (req, cb) ->
         UserProfiles.get(req.profile_url, (err, profile) ->
-            return if err
-            req.league = profile.league
-            player = new Player(socket, req)
-            LobbyManager.addPlayer(player)
-            cb()
+            try
+                return if err
+                req.league = profile.league
+                player = new Player(socket, req)
+                LobbyManager.addPlayer(player)
+                cb()
+            catch err
+                console.log('Exception: ' + err)
         )
     )
     socket.on('listLobbies', (req, cb) ->
         UserProfiles.get(req.profile_url, (err, profile) ->
-            return if err
-            req.league = profile.league
-            player = new Player(socket, req)
-            lobbies = LobbyManager.getMatchingLobbies(player)
-            cb(lobbies)
+            try
+                return if err
+                req.league = profile.league
+                player = new Player(socket, req)
+                lobbies = LobbyManager.getMatchingLobbies(player)
+                cb(lobbies)
+            catch err
+                console.log('Exception: ' + err)
         )
     )
     socket.on('joinLobby', (req, cb) ->
         UserProfiles.get(req.profile_url, (err, profile) ->
-            return if err
-            req.league = profile.league
-            player = new Player(socket, req)
-            LobbyManager.joinLobby(player, cb)
+            try
+                return if err
+                req.league = profile.league
+                player = new Player(socket, req)
+                LobbyManager.joinLobby(player, cb)
+            catch err
+                console.log('Exception: ' + err)
         )
     )
     socket.on('sendChat', (text) ->
-        LobbyManager.sendChat(socket.id, text)
+        try
+            LobbyManager.sendChat(socket.id, text)
+        catch err
+            console.log('Exception: ' + err)
     )
     socket.on('exitLobby', ->
-        LobbyManager.removePlayer(socket.id)
+        try
+            LobbyManager.removePlayer(socket.id)
+        catch err
+            console.log('Exception: ' + err)
     )
     socket.on('disconnect', ->
-        LobbyManager.removePlayer(socket.id)
+        try
+            LobbyManager.removePlayer(socket.id)
+        catch err
+            console.log('Exception: ' + err)
     )
 )
