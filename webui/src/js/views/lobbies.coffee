@@ -240,6 +240,8 @@ class window.LobbyView extends Backbone.View
     reset: =>
         @players = []
         @lobby_id = null
+        @last_chat_times = []
+        @chat_blocked = false
         $(@el).html(render('lobby'))
         this.addMsg('Joining lobby..')
 
@@ -257,13 +259,36 @@ class window.LobbyView extends Backbone.View
     hide: =>
         $(@el).detach()
 
+    rateOk: =>
+        now = new Date().getTime()
+        if @chat_blocked
+            if now > @chat_blocked
+                @last_chat_times = [now]
+                @chat_blocked = false
+                return true
+            else
+                return false
+        else
+            if @last_chat_times.length < 4
+                @last_chat_times.push(now)
+                return true
+            else if now - @last_chat_times[0] < 2000
+                @chat_blocked = now + 5000
+                this.addMsg('You are spamming the chat. Wait 5 seconds.')
+                return false
+            else
+                @last_chat_times.push(now)
+                @last_chat_times.shift()
+                return true
+
     sendChat: =>
         msg_box = this.$('#msg-box')
         msg = msg_box.val()
         return if not msg
         msg_box.val('')
-        this.chatReceived({id: @lobby_id, text: msg})
-        GameServer.sendChat(msg)
+        if this.rateOk()
+            this.chatReceived({id: @lobby_id, text: msg})
+            GameServer.sendChat(msg)
 
     sendChatOnEnter: (e) =>
         this.sendChat() if e.keyCode is 13
