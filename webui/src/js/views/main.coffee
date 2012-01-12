@@ -19,6 +19,8 @@ class window.CGFView extends Backbone.View
         @create_lobby_view.show()
         if not CurrentUser.logged_in
             @login_view.show()
+        else
+            GameServer.connect()
 
     login: (profile_url, char_code, race) =>
         login_valid = true
@@ -27,6 +29,8 @@ class window.CGFView extends Backbone.View
             @login_view.error('char-code',
                 'Character code must contain only 3 digits')
         if login_valid
+            @login_view.loggingIn()
+            GameServer.connect()
             GameServer.getUserProfile(profile_url, (err, profile) =>
                 return @login_view.error('profile-url', err) if err
                 CurrentUser.login(profile_url, profile.region, profile.name,
@@ -114,6 +118,10 @@ class window.LoginView extends Backbone.View
         input = this.$('#login-' + field)
         input.addClass('error')
         input.after(render('form-error', {msg: msg}))
+        this.$('#login-btn').removeClass('disabled')
+
+    loggingIn: =>
+        this.$('#login-btn').addClass('disabled')
 
 class window.UserDetailsView extends Backbone.View
     id: 'user-details-view'

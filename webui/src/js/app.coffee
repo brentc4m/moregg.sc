@@ -78,7 +78,7 @@ class CurrentUserGlobal extends Events
 window.CurrentUser = new CurrentUserGlobal()
 
 class GameServerGlobal extends Events
-    constructor: ->
+    connect: ->
         @socket = io.connect('http://localhost:5000')
         @socket.on('playerJoined', (d) => this.trigger('playerJoined', d))
         @socket.on('playerLeft', (d) => this.trigger('playerLeft', d))
