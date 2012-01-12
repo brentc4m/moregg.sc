@@ -17,7 +17,7 @@
 
 %script#user-details-tmpl(type="text/template")
   <% if (user.logged_in) { %>
-  %h2 <%= user.name + '.' + user.char_code %>
+  %h2 <%- user.name + '.' + user.char_code %>
   %dl
     %dt Region
     %dd <%= user.region %>
@@ -154,7 +154,7 @@
     <% } %>
 
 %script#player-link-tmpl(type="text/template")<
-  <b><%= player.league + ' ' + player.race %></b> <a target="_blank" href="<%= player.profile_url %>"><%= player.name + '.' + player.char_code %></a>
+  <b><%= player.league + ' ' + player.race %></b> <a target="_blank" href="<%- player.profile_url %>"><%= player.name + '.' + player.char_code %></a>
 
 %script#chat-msg-tmpl(type="text/template")
   %li <%= timestamp %> <%= msg %>

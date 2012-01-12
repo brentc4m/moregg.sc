@@ -300,7 +300,8 @@ class window.LobbyView extends Backbone.View
         this.renderPlayers()
 
     chatReceived: (msg_info) =>
-        this.addMsg(this.playerLink(msg_info.id) + ': ' + msg_info.text)
+        text = $('<div/>').text(msg_info.text).html()
+        this.addMsg(this.playerLink(msg_info.id) + ': ' + text)
 
     exitLobby: =>
         this.options.app.exitLobby()
