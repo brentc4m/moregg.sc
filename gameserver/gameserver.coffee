@@ -16,6 +16,10 @@ seriesMatches = (p1, p2) ->
 mapMatches = (p1, p2) ->
     return _.intersection(p1.params.maps, p2.params.maps)
 
+blocklistOk = (p1, p2) ->
+    user = p2.name + '.' + p2.char_code
+    return not p1.params.blocked_users[user]
+
 class Player
     constructor: (socket, request) ->
         _.extend(this, request)
@@ -29,6 +33,8 @@ class Player
         if not raceMatches(p1, p2) or not raceMatches(p2, p1)
             return false
         if not leagueMatches(p1, p2) or not leagueMatches(p2, p1)
+            return false
+        if not blocklistOk(p1, p2) or not blocklistOk(p2, p1)
             return false
         series = seriesMatches(p1, p2)
         return false if series.length is 0

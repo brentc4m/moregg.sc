@@ -213,7 +213,7 @@ class window.ListLobbiesView extends Backbone.View
 
     joinLobby: (e) =>
         e.preventDefault()
-        this.$('#lobby-error').remove()
+        this.$('.alert-message.error').remove()
         lobby_id = e.target.hash.slice(1)
         this.options.app.joinLobby(lobby_id)
 
@@ -227,6 +227,7 @@ class window.LobbyView extends Backbone.View
 
     events:
         'keypress #msg-box': 'sendChatOnEnter'
+        'click a.block-player': 'blockPlayer'
         'click #exit-lobby-btn': 'exitLobby'
 
     initialize: =>
@@ -280,6 +281,7 @@ class window.LobbyView extends Backbone.View
         @lobby_id = GameServer.socket.id
         this.addMsg('Lobby joined')
         curr_player = CurrentUser.toJSON()
+        curr_player.this_player = true
         curr_player.id = @lobby_id
         this.playerJoined(curr_player)
 
@@ -312,3 +314,10 @@ class window.LobbyView extends Backbone.View
         this.addMsg('Series type: ' + series)
         this.addMsg('Maps: ' + maps)
         this.addMsg('First map: ' + MAP_LABELS[game_info.random_map])
+
+    blockPlayer: (e) =>
+        e.preventDefault()
+        this.$('.alert-message').remove()
+        player = e.target.hash.slice(1)
+        this.options.app.addBlocklist(player)
+        $(@el).prepend(render('alert-message', {type: 'success', msg: player + ' successfully blocked. You will no longer see games with this player.'}))

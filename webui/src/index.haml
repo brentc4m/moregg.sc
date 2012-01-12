@@ -24,6 +24,7 @@
     %dt League
     %dd <%= user.league %>
     <%= selects %>
+  %button#open-blocklist-btn.btn.primary Edit blocklist
   %button#logout-btn.btn.primary Logout
   <% } else { %>
   %h2 Welcome
@@ -54,7 +55,7 @@
                 <option value="<%= races[i].val %>"><%= races[i].label %></option>
                 <% } %>
     .modal-footer
-      %button#login-btn.btn.primary Login
+      %button#login-btn.btn.primary(type="button") Login
 
 %script#checkbox-group-tmpl(type="text/template")
   <div id="<%= name + '-cf' %>" class="clearfix">
@@ -145,7 +146,11 @@
 %script#lobby-players-tmpl(type="text/template")
   %ul.unstyled
     <% for (var i=0; i<players.length; i++) { %>
-    %li <%= player_link({player: players[i]}) %>
+    %li
+      <%= player_link({player: players[i]}) %>
+      <% if (!players[i].this_player) { %>
+      %b <a class="block-player" href="#<%= players[i].name + '.' + players[i].char_code %>">X</a>
+      <% } %>
     <% } %>
 
 %script#player-link-tmpl(type="text/template")<
@@ -158,6 +163,41 @@
   %span.help-inline <%= msg %>
 
 %script#alert-message-tmpl(type="text/template")
-  <div id="lobby-error" class="alert-message <%= type %>">
+  <div class="alert-message <%= type %>">
   %p <%= msg %>
   </div>
+
+%script#blocklist-editor-tmpl(type="text/template")
+  .modal-backdrop
+  .modal
+    .modal-header
+      %h3 Blocklist
+    .modal-body
+      %form
+        %fieldset
+          %legend Remove users
+          #blocklist-remove-cf.clearfix
+            %label(for="blocklist-remove-select") Current users
+            .input
+              %select#blocklist-remove-select.medium(size=10 multiple="multiple" name="blocklist")
+                <% for (var i=0; i<blocklist.length; i++) { %>
+                %option <%= blocklist[i] %>
+                <% } %>
+          .clearfix
+            .input
+              %button#blocklist-remove-btn.btn.primary(type="button") Remove selected
+        %fieldset
+          %legend Add user
+          #blocklist-add-name-cf.clearfix
+            %label(for="blocklist-add-name") Name
+            .input
+              %input#blocklist-add-name.medium(type="text")/
+          #blocklist-add-code-cf.clearfix
+            %label(for="blocklist-add-code") Character code
+            .input
+              %input#blocklist-add-code.mini(type="text" maxlength=3)/
+          .clearfix
+            .input
+              %button#blocklist-add-btn.btn.primary(type="button") Add
+    .modal-footer
+      %button#blocklist-close-btn.btn.primary(type="button") Close
