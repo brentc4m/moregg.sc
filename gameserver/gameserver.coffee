@@ -160,12 +160,13 @@ class UserProfilesGlobal
     constructor: ->
         @client = new pg.Client('tcp://postgres:pgpass1@localhost/cgf')
         @client.connect()
+        @scrapes = []
 
     get: (profile_url, cb) =>
         this._getFromDB(profile_url, (err, profile) =>
             return cb(err) if err
             return cb(null, profile) if profile isnt null
-            this._scrape(profile_url, (err, profile) =>
+            this._queueScrape(profile_url, (err, profile) =>
                 return cb(err) if err
                 this._putInDB(profile_url, profile)
                 cb(null, profile)
@@ -194,6 +195,17 @@ class UserProfilesGlobal
             text: 'INSERT INTO profiles (url, region, name, league) VALUES ($1, $2, $3, $4)',
             values: [profile_url, profile.region, profile.name, profile.league]
         })
+
+    _queueScrape: (profile_url, cb) =>
+        @scrapes.push({profile_url: profile_url, cb: cb})
+        return if @scrapes.length > 1
+        this._scrape(profile_url, @_queuedScrapeCB)
+
+    _queuedScrapeCB: (err, data) =>
+        s = @scrapes.shift() # this should have just finished
+        s.cb(err, data)
+        if @scrapes.length > 0 # still more to go
+            this._scrape(@scrapes[0].profile_url, @_queuedScrapeCB)
 
     _scrape: (profile_url, cb) =>
         error = 'Bad profile URL or an error occurred, try again.'
