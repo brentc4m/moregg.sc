@@ -4,9 +4,9 @@
   "description": "CGF Game Server",
   "author": "Brent Hill <brentc4m@gmail.com>",
   "dependencies": {
-    "pg": "0.x.x",
     "request": "2.x.x",
     "socket.io": "0.x.x",
+    "sqlite3": "2.x.x",
     "underscore": "1.x.x"
   },
   "engine": "node >= 0.6.5"

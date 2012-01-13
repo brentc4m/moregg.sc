@@ -1,6 +1,6 @@
-pg = require('pg')
 request = require('request')
 socketio = require('socket.io')
+sqlite3 = require('sqlite3')
 util = require('util')
 _ = require('underscore')
 
@@ -158,8 +158,7 @@ class UserProfilesGlobal
         'grandmaster': 'gm'
 
     constructor: ->
-        @client = new pg.Client('tcp://postgres:pgpass1@localhost/cgf')
-        @client.connect()
+        @db = new sqlite3.Database('profiles.db')
         @scrapes = []
 
     get: (profile_url, cb) =>
@@ -174,27 +173,26 @@ class UserProfilesGlobal
         )
 
     _getFromDB: (profile_url, cb) =>
-        @client.query({
-            name: 'get',
-            text: 'SELECT region, name, league FROM profiles WHERE url = $1',
-            values: [profile_url]
-        }, (err, result) =>
-            if err
-                console.log(err)
-                return cb('Temporary error, try again later')
-            if result.rows.length is 0
-                cb(null, null)
-            else
-                row = result.rows[0]
-                cb(null, {region: row.region, name: row.name, league: row.league})
+        @db.get(
+            'SELECT region, name, league FROM profiles WHERE url = ?',
+            profile_url,
+            (err, row) =>
+                if err
+                    console.log(err)
+                    cb('Temporary error, try again later')
+                else if row is undefined
+                    cb(null, null)
+                else
+                    cb(null, {region: row.region, name: row.name, league: row.league})
         )
 
     _putInDB: (profile_url, profile) =>
-        @client.query({
-            name: 'put',
-            text: 'INSERT INTO profiles (url, region, name, league) VALUES ($1, $2, $3, $4)',
-            values: [profile_url, profile.region, profile.name, profile.league]
-        })
+        @db.run(
+            'INSERT INTO profiles (url, region, name, league) VALUES ($1, $2, $3, $4)',
+            [profile_url, profile.region, profile.name, profile.league],
+            (err) =>
+                console.log(err) if err
+        )
 
     _queueScrape: (profile_url, cb) =>
         @scrapes.push({profile_url: profile_url, cb: cb})

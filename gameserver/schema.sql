@@ -1,6 +1,6 @@
 CREATE TABLE profiles (
-    url         varchar(512) PRIMARY KEY,
-    region      varchar(3) NOT NULL,
-    name        varchar(128) NOT NULL,
-    league      varchar(2) NOT NULL
+    url         TEXT PRIMARY KEY,
+    region      TEXT NOT NULL,
+    name        TEXT NOT NULL,
+    league      TEXT NOT NULL
 );
