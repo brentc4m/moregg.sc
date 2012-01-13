@@ -1,33 +1,43 @@
 .container
-  #cgf-header
-    %h1 Custom Game Finder
+  .topbar
+    #cgf-topbar.topbar-inner
   .row
+    .span2
+      &nbsp;
     #cgf-content.span12
-    #cgf-sidebar.span4
+    .span2
+      &nbsp;
   #cgf-footer
 
 %script#user-select-tmpl(type="text/template")
-  %dt <%= label %>
-  %dd
-    <select id="<%= id + '-select' %>" class="medium">
-    <% for (var i=0; i<opts.length; i++) { %>
-    <option value="<%= opts[i].val %>"<% if (selected === opts[i].val) { %> selected="selected"<% } %>><%= opts[i].label %></option>
-    <% } %>
-    </select>
+  <select id="<%= id + '-select' %>" class="medium">
+  <% for (var i=0; i<opts.length; i++) { %>
+  <option value="<%= opts[i].val %>"<% if (selected === opts[i].val) { %> selected="selected"<% } %>><%= opts[i].label %></option>
+  <% } %>
+  </select>
 
 %script#user-details-tmpl(type="text/template")
+  %a.brand
+    more
+    %strong> gg
   <% if (user.logged_in) { %>
-  %h2 <%- user.name + '.' + user.char_code %>
-  %dl
-    %dt Region
-    %dd <%= user.region %>
-    %dt League
-    %dd <%= user.league %>
-    <%= selects %>
-  %button#open-blocklist-btn.btn.primary Edit blocklist
-  %button#logout-btn.btn.primary Logout
-  <% } else { %>
-  %h2 Welcome
+  %ul.nav
+    %li
+      %a <%- user.name + '.' + user.char_code %>
+    %li
+      %a <%= user.region %>
+    %li
+      %a <%= user.league %>
+    %li
+      %a
+        <%= race_select %>
+  %ul.nav.secondary-nav 
+    %li
+      %a
+        %button#open-blocklist-btn.btn.primary Edit blocklist
+    %li
+      %a
+        %button#logout-btn.btn.primary Logout
   <% } %>
 
 %script#login-form-tmpl(type="text/template")
@@ -98,15 +108,16 @@
         <% } %>
 
 %script#create-lobby-tmpl(type="text/template")
+  %h2 Find game
   %form
     %fieldset
-      %legend Game options
       <%= fields %>
       .actions
         %button#create-lobby-btn.btn.primary(type="button") Find Game
         %button#list-lobbies-btn.btn(type="button") List Games
 
 %script#list-lobbies-tmpl(type="text/template")
+  %h2 Lobbies
   <% if (lobbies === null) { %>
   <p>Please wait..</p>
   <% } else if (lobbies.length == 0) { %>
@@ -133,31 +144,33 @@
     %button#exit-lobbies-list-btn.btn.primary(type="button") Back
 
 %script#lobby-tmpl(type="text/template")
+  %h2 Lobby
   .row
     #chat-box.span8
-      %ul#msg-list.unstyled
+      #msg-list
     #user-list.span4
   .row
     .span8
       %input#msg-box(type="text")/
-    .span4
-      %button#exit-lobby-btn.btn.primary Exit Lobby
+  .actions
+    %button#exit-lobby-btn.btn.primary Exit Lobby
 
 %script#lobby-players-tmpl(type="text/template")
-  %ul.unstyled
-    <% for (var i=0; i<players.length; i++) { %>
-    %li
-      <%= player_link({player: players[i]}) %>
-      <% if (!players[i].this_player) { %>
-      %b <a class="block-player" href="#<%= players[i].name + '.' + players[i].char_code %>">X</a>
-      <% } %>
+  %h4 Players
+  <% for (var i=0; i<players.length; i++) { %>
+  %div
+    <%= player_link({player: players[i]}) %>
+    <% if (!players[i].this_player) { %>
+    %b <a class="block-player" href="#<%= players[i].name + '.' + players[i].char_code %>">X</a>
     <% } %>
+  <% } %>
 
 %script#player-link-tmpl(type="text/template")<
   <b><%= player.league + ' ' + player.race %></b> <a target="_blank" href="<%- player.profile_url %>"><%= player.name + '.' + player.char_code %></a>
 
 %script#chat-msg-tmpl(type="text/template")
-  %li <%= timestamp %> <%= msg %>
+  .msg
+    <%= timestamp %> <%= msg %>
 
 %script#form-error-tmpl(type="text/template")
   %span.help-inline <%= msg %>

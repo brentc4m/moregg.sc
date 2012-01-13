@@ -126,6 +126,8 @@ class window.LoginView extends Backbone.View
 class window.UserDetailsView extends Backbone.View
     id: 'user-details-view'
 
+    className: 'container'
+
     events:
         'click #logout-btn': 'logout'
         'click #open-blocklist-btn': 'openBlocklist'
@@ -135,9 +137,9 @@ class window.UserDetailsView extends Backbone.View
         CurrentUser.bind('change', @render)
 
     render: =>
-        selects = ''
+        race_select = ''
         if CurrentUser.logged_in
-            selects += render('user-select',
+            race_select = render('user-select',
                 id: 'race'
                 label: 'Race'
                 selected: CurrentUser.race
@@ -145,12 +147,12 @@ class window.UserDetailsView extends Backbone.View
             )
         $(@el).html(render('user-details',
             user: CurrentUser
-            selects: selects
+            race_select: race_select
         ))
 
     show: =>
         this.render()
-        $('#cgf-sidebar').append(@el)
+        $('#cgf-topbar').append(@el)
 
     logout: =>
         CurrentUser.logout()
