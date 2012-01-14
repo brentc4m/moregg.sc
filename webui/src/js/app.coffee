@@ -127,6 +127,7 @@ window.render = (id, data) ->
     return tmpl(data)
 
 window.LEAGUE_OPTS = [
+    {val: 'n', label: 'Unranked'}
     {val: 'b', label: 'Bronze'},
     {val: 's', label: 'Silver'},
     {val: 'g', label: 'Gold'},

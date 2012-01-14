@@ -90,6 +90,7 @@ class LobbyManagerGlobal
         @lobbies_by_id = {}
 
     addPlayer: (player) =>
+        return if player.id of @lobbies_by_id
         lobby = new Lobby(player)
         @pending_lobbies.push(lobby)
         @lobbies_by_id[player.id] = lobby
@@ -128,6 +129,8 @@ class LobbyManagerGlobal
         return (l.players[0] for l in @pending_lobbies when l.matches(fake_lobby))
 
     joinLobby: (player, cb) =>
+        if player.id of @lobbies_by_id
+            return cb('You are already in a lobby. Try reloading the page.')
         new_lobby = new Lobby(player)
         lobby_to_join = @lobbies_by_id[player.params.lobby_id]
         if lobby_to_join? and lobby_to_join.matches(new_lobby)
