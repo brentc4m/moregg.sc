@@ -118,9 +118,11 @@ class window.LoginView extends Backbone.View
         input = this.$('#login-' + field)
         input.addClass('error')
         input.after(render('form-error', {msg: msg}))
+        this.$('#login-msg').remove()
         this.$('#login-btn').removeClass('disabled')
 
     loggingIn: =>
+        this.$('#login-btn').before(render('login-msg', {msg: 'Gathering profile data, please wait..'}))
         this.$('#login-btn').addClass('disabled')
 
 class window.UserDetailsView extends Backbone.View

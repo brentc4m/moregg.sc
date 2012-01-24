@@ -67,6 +67,9 @@
     .modal-footer
       %button#login-btn.btn.primary(type="button") Login
 
+%script#login-msg-tmpl(type="text/template")
+  #login-msg.pull-left <%= msg %>
+
 %script#checkbox-group-tmpl(type="text/template")
   <div id="<%= name + '-cf' %>" class="clearfix">
   %label <%= label %>
