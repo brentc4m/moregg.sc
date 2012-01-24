@@ -19,7 +19,7 @@
 %script#user-details-tmpl(type="text/template")
   %a.brand
     more
-    %strong> gg
+    %strong gg
   <% if (user.logged_in) { %>
   %ul.nav
     %li
@@ -27,7 +27,7 @@
     %li
       %a <%= user.region %>
     %li
-      %a <%= user.league %>
+      <a class="league-<%= user.league %>">&nbsp;</a>
     %li
       %a
         <%= race_select %>
@@ -127,9 +127,9 @@
   <div id="lobby-<%= lobbies[i].id %>" class="alert-message block-message info">
   %p
     %strong League
-    <%= lobbies[i].league %>
+    <img src="img/l/<%= lobbies[i].league %>.png" />
     %strong Race
-    <%= lobbies[i].race %>
+    <img src="img/r/<%= lobbies[i].race %>.png" />
     %strong Series
     <%= lobbies[i].params.series %>
   %p
@@ -166,11 +166,12 @@
   <% } %>
 
 %script#player-link-tmpl(type="text/template")<
-  <b><%= player.league + ' ' + player.race %></b> <a target="_blank" href="<%- player.profile_url %>"><%= player.name + '.' + player.char_code %></a>
+  <img src="img/l/<%= player.league %>.png"> <img src="img/r/<%= player.race %>.png"> <a target="_blank" href="<%- player.profile_url %>"><%= player.name + '.' + player.char_code %></a>
 
 %script#chat-msg-tmpl(type="text/template")
   .msg
-    <%= timestamp %> <%= msg %>
+    %span.light <%= timestamp %>
+    <%= msg %>
 
 %script#form-error-tmpl(type="text/template")
   %span.help-inline <%= msg %>
