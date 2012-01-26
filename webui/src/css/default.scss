@@ -1,45 +1,9 @@
-@import "bootstrap";
-
-$topbar_gradient_start: #072B4D;
-$topbar_gradient_end: #051D33;
-
-body {
-    padding-top: 80px;
-    background: #041626;
-}
-
-.topbar-inner, .topbar .fill {
-    background-color: $topbar_gradient_end;
-    background-repeat: repeat-x;
-    background-image: -khtml-gradient(linear, left top, left bottom, from($topbar_gradient_start), to($topbar_gradient_end));
-    background-image: -moz-linear-gradient(top, $topbar_gradient_start, $topbar_gradient_end);
-    background-image: -ms-linear-gradient(top, $topbar_gradient_start, $topbar_gradient_end);
-    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, $topbar_gradient_start), color-stop(100%, $topbar_gradient_end));
-    background-image: -webkit-linear-gradient(top, $topbar_gradient_start, $topbar_gradient_end);
-    background-image: -o-linear-gradient(top, $topbar_gradient_start, $topbar_gradient_end);
-    background-image: linear-gradient(top, $topbar_gradient_start, $topbar_gradient_end);
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='$topbar_gradient_start', endColorstr='$topbar_gradient_end', GradientType=0);
-}
-
-.topbar div > ul a, .nav a, .container .brand {
-    line-height: 30px;
-    color: #fff;
-}
-
-#cgf-content {
-    padding: 20px;
-    padding-bottom: 0px;
-    background: #fff;
-    -moz-border-radius: 5px;
-    border-radius: 5px;
-}
-
-.actions {
-    background: #fff;
+#cgf-content, #cgf-sidebar {
+    //border: 1px solid black;
 }
 
 #msg-box {
-    width: 94%;
+    width: 100%;
 }
 
 #chat-box {

@@ -1,0 +1,184 @@
+- @layout = "app"
+
+.container
+  #cgf-header
+    %h1
+      %a(href="/") More GG
+    %ul.nav
+      %li
+        %a(href="/games/") Find Games
+      %li
+        %a(href="/faq/") FAQ
+      %li
+        %a(href="/about/") About
+  .row
+    #cgf-content.span9
+    #cgf-sidebar.span3
+  #cgf-footer
+
+%script(language="javascript" type="text/javascript")
+  $(function () { new CGFView().render(); });
+
+%script#user-select-tmpl(type="text/template")
+  <select id="<%= id + '-select' %>" class="medium"<% if (disabled) { %>disabled="disabled"<% } %>>
+  <% for (var i=0; i<opts.length; i++) { %>
+  <option value="<%= opts[i].val %>"<% if (selected === opts[i].val) { %> selected="selected"<% } %>><%= opts[i].label %></option>
+  <% } %>
+  </select>
+
+%script#user-settings-tmpl(type="text/template")
+  %h3 Settings
+  %ul.unstyled
+    %li
+      %i.user
+      <%- user.name + '.' + user.char_code %>
+    %li
+      %i.flag
+      <%= user.region %>
+    %li
+      %i.bookmark
+      <span class="league-<%= user.league %>">&nbsp;</span>
+    %li
+      %i.cog
+      <%= race_select %>
+    <% if (in_game) { %>
+    %li
+      %button#exit-lobby-btn.btn.primary Exit lobby
+    <% } else { %>
+    %li
+      %button#find-game-btn.btn.primary Find game
+    %li
+      %button#open-blocklist-btn.btn.primary(type="button") Edit blocklist
+    <% } %>
+    %li
+      %button#logout-btn.btn.primary Logout
+
+%script#login-form-tmpl(type="text/template")
+  %h3 Login
+  %form
+    %label Profile URL
+    %input#login-profile-url(type="text")/
+    %label Character Code
+    %input#login-char-code(type="text" maxlength=3)/
+    %label Race
+    %select#login-race
+      <% for (var i=0; i<races.length; i++) { %>
+      <option value="<%= races[i].val %>"><%= races[i].label %></option>
+      <% } %>
+    %button#login-btn.btn.primary(type="button") Login
+
+%script#login-msg-tmpl(type="text/template")
+  #login-msg <%= msg %>
+
+%script#checkbox-group-tmpl(type="text/template")
+  %fieldset.control-group
+    %label.control-label <%= label %>
+    .controls
+      <% for (var i=0; i<opts.length; i++) { %>
+      %label.checkbox.inline
+        <input type="checkbox" name="<%= name %>" value="<%= opts[i].val %>" <% if (checked.indexOf(opts[i].val) != -1) { %>checked="checked"<% } %>/>
+        <%= opts[i].label %>
+      <% } %>
+
+%script#split-checkbox-group-tmpl(type="text/template")
+  %fieldset.control-group
+    %label.control-label <%= label %>
+    .controls
+      .row
+        <% var half = Math.ceil(opts.length/2); %>
+        <% for (var c=0; c<2; c++) { %>
+        .span3(style="padding-top: 6px")
+          <% for (var i=c*half; i<Math.min((c+1)*half, opts.length); i++) { %>
+          %label.checkbox
+            <input type="checkbox" name="<%= name %>" value="<%= opts[i].val %>" <% if (checked.indexOf(opts[i].val) != -1) { %>checked="checked"<% } %>/>
+            <%= opts[i].label %>
+          <% } %>
+        <% } %>
+
+%script#map-field-tmpl(type="text/template")
+  %fieldset#maps-fs.control-group
+    %label.control-label Maps
+    .controls
+      %ul#map-tabs.nav.tabs
+        <% for (var i=0; i<sections.length; i++) { %>
+        <li <% if (i==0) { %> class="active"<% } %>><a href="<%= '#maps-' + sections[i].name %>"><%= sections[i].label %></a></li>
+        <% } %>
+      .tab-content
+        <% for (var s=0; s<sections.length; s++) { sec = sections[s]; %>
+        <% var half = Math.ceil(sec.maps.length/2); %>
+        <div id="<%= 'maps-' + sec.name %>" class="tab-pane row<% if (s==0) { %> active<% } %>">
+        <% for (var c=0; c<2; c++) { %>
+        .span3
+          <% for (var i=c*half; i<Math.min((c+1)*half, sec.maps.length); i++) { %>
+          %label.checkbox
+            <input type="checkbox" name="maps" value="<%= sec.maps[i].val %>" <% if (checked.indexOf(sec.maps[i].val) != -1) { %>checked="checked"<% } %>/>
+            <%= sec.maps[i].label %>
+          <% } %>
+        <% } %>
+        </div>
+        <% } %>
+
+%script#create-lobby-tmpl(type="text/template")
+  %h2 Find game
+  %form.form-horizontal
+    <%= fields %>
+    %fieldset.form-actions
+      %button#create-lobby-btn.btn.primary(type="button") Find game
+      %button#close-create-lobby-btn.btn(type="button") Back to lobby
+
+%script#lobby-tmpl(type="text/template")
+  %h2 Lobby
+  .row
+    .span6
+      %h3 Chat
+      #chat-box
+        #msg-list
+      %input#msg-box(type="text")/
+    #user-list.span3
+
+%script#lobby-players-tmpl(type="text/template")
+  %h3 Players
+  <% for (var i=0; i<players.length; i++) { %>
+  %div
+    <%= player_link({player: players[i]}) %>
+    <% if (!players[i].this_player) { %>
+    %b <a class="block-player" href="#<%= players[i].name + '.' + players[i].char_code %>">X</a>
+    <% } %>
+  <% } %>
+  <% if (players.length == 0) { %>
+  No players found.
+  <% } %>
+
+%script#player-link-tmpl(type="text/template")<
+  <img src="/img/l/<%= player.league %>.png"> <img src="/img/r/<%= player.race %>.png"> <a target="_blank" href="<%- player.profile_url %>"><%= player.name + '.' + player.char_code %></a>
+
+%script#chat-msg-tmpl(type="text/template")
+  .msg
+    %span.light <%= timestamp %>
+    <%= msg %>
+
+%script#form-error-tmpl(type="text/template")
+  %span.help-inline <%= msg %>
+
+%script#alert-message-tmpl(type="text/template")
+  <div class="alert-message alert-<%= type %>">
+  <%= msg %>
+  </div>
+
+%script#blocklist-editor-tmpl(type="text/template")
+  %h2 Blocklist
+  %form
+    .row
+      .span4
+        %select#blocklist-remove-select(size=10 multiple="multiple" name="blocklist")
+          <% for (var i=0; i<blocklist.length; i++) { %>
+          %option <%= blocklist[i] %>
+          <% } %>
+        %button#blocklist-remove-btn.btn.primary(type="button") Remove selected
+      .span4
+        %label Name
+        %input#blocklist-add-name.medium(type="text")/
+        %label Character code
+        %input#blocklist-add-code.mini(type="text" maxlength=3)/
+        %button#blocklist-add-btn.btn.primary(type="button") Add
+  %button#blocklist-close-btn.btn.primary(type="button") Close blocklist

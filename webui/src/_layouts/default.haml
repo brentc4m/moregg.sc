@@ -3,15 +3,20 @@
   %head
     %title More GG - Starcraft 2 Custom Game Finder
     = stylesheets
-    = javascripts 'support/date'
-    = javascripts 'support/jsuri'
-    = javascripts 'support/jquery'
-    = javascripts 'support/json2'
-    = javascripts 'support/underscore'
-    = javascripts 'support/backbone'
-    = javascripts 'support/socket.io'
-    = javascripts 'views/main'
-    = javascripts 'views/lobbies'
-    = javascripts 'app'
   %body
-    = yield
+    .container
+      .topbar
+        #cgf-topbar.topbar-inner
+          .container
+            %a.brand(href="/")
+              more
+              %strong gg
+            %ul.nav
+              %li
+                %a(href="/faq/") FAQ
+            %ul.nav.secondary-nav
+              %li
+                %a(href="/app/") Start Playing
+      = yield
+      #cgf-footer.pull-right
+        Copyright 2012 Brent Hill moregg.sc

@@ -26,7 +26,7 @@ class LobbyOptionsGlobal
         delete localStorage['cgf.lobby_options']
 window.LobbyOptions = new LobbyOptionsGlobal()
 
-class CurrentUserGlobal extends Events
+class CurrentUserGlobal
     attrs: ['name', 'char_code', 'profile_url', 'region', 'race', 'league']
 
     constructor: ->
@@ -52,7 +52,6 @@ class CurrentUserGlobal extends Events
         delete localStorage['cgf.logged_in']
         @logged_in = false
         LobbyOptions.clear()
-        this.trigger('change')
 
     saveAttrs: =>
         for attr in @attrs
@@ -70,7 +69,6 @@ class CurrentUserGlobal extends Events
         LobbyOptions.save()
         localStorage['cgf.logged_in'] = 'true'
         @logged_in = true
-        this.trigger('change')
 
     changeRace: (race) =>
         @race = race
@@ -79,14 +77,35 @@ window.CurrentUser = new CurrentUserGlobal()
 
 class GameServerGlobal extends Events
     connect: ->
+        this.trigger('connecting')
         @socket = io.connect('http://localhost:5000')
-        @socket.on('playerJoined', (d) => this.trigger('playerJoined', d))
-        @socket.on('playerLeft', (d) => this.trigger('playerLeft', d))
-        @socket.on('chatReceived', (d) => this.trigger('chatReceived', d))
-        @socket.on('lobbyFinished', (d) => this.trigger('lobbyFinished', d))
+        @socket.on('connect', =>
+            this.trigger('connect')
+        )
+        @socket.on('lobbyJoined', (global, players) =>
+            this.trigger('lobbyJoined', global, players)
+        )
+        @socket.on('playerJoined', (player_info) =>
+            this.trigger('playerJoined', player_info)
+        )
+        @socket.on('playerLeft', (id) =>
+            this.trigger('playerLeft', id)
+        )
+        @socket.on('chatReceived', (msg_info) =>
+            this.trigger('chatReceived', msg_info)
+        )
+        @socket.on('lobbyFinished', (game_info) =>
+            this.trigger('lobbyFinished', game_info)
+        )
 
     getUserProfile: (profile_url, cb) =>
         @socket.emit('getUserProfile', profile_url, cb)
+
+    joinGlobalLobby: =>
+        player = if CurrentUser.logged_in then CurrentUser.toJSON() else null
+        @socket.emit('joinGlobalLobby', player, (players) =>
+            this.trigger('lobbyJoined', true, players)
+        )
 
     _getLobbyRequest: =>
         request = CurrentUser.toJSON()
@@ -96,26 +115,18 @@ class GameServerGlobal extends Events
 
     createLobby: =>
         request = this._getLobbyRequest()
-        @socket.emit('createLobby', request, => this.trigger('lobbyJoined'))
-
-    joinLobby: (id, cb) =>
-        request = this._getLobbyRequest()
-        request.params.lobby_id = id
-        @socket.emit('joinLobby', request, (err) =>
-            return cb(err) if err
-            this.trigger('lobbyJoined')
-            cb()
+        @socket.emit('createLobby', request, (players) =>
+            this.trigger('lobbyJoined', false, players)
         )
-
-    listLobbies: =>
-        request = this._getLobbyRequest()
-        @socket.emit('listLobbies', request, (l) => this.trigger('lobbiesListed', l))
 
     sendChat: (msg) =>
         @socket.emit('sendChat', msg)
 
     exitLobby: =>
         @socket.emit('exitLobby')
+
+    getID: =>
+        return @socket.socket.sessionid
 window.GameServer = new GameServerGlobal()
 
 window.getTemplate = _.memoize((id) ->
@@ -143,6 +154,3 @@ window.RACE_OPTS = [
     {val: 'z', label: 'Zerg'},
     {val: 'p', label: 'Protoss'}
 ]
-
-$ ->
-    new CGFView().render()

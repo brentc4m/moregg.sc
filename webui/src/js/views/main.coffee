@@ -8,19 +8,22 @@ class window.CGFView extends Backbone.View
 
     initialize: =>
         @login_view = new LoginView({app: this})
-        @user_details_view = new UserDetailsView({app: this})
+        @user_settings_view = new UserSettingsView({app: this})
         @blocklist_view = new BlocklistView({app: this})
         @create_lobby_view = new CreateLobbyView({app: this})
-        @list_lobbies_view = new ListLobbiesView({app: this})
         @lobby_view = new LobbyView({app: this})
+        GameServer.bind('connect', this.connected)
+        GameServer.connect()
 
     render: =>
-        @user_details_view.show()
-        @create_lobby_view.show()
-        if not CurrentUser.logged_in
-            @login_view.show()
+        @lobby_view.show()
+        if CurrentUser.logged_in
+            @user_settings_view.show()
         else
-            GameServer.connect()
+            @login_view.show()
+
+    connected: =>
+        GameServer.joinGlobalLobby()
 
     login: (profile_url, char_code, race) =>
         login_valid = true
@@ -30,53 +33,31 @@ class window.CGFView extends Backbone.View
                 'Character code must contain only 3 digits')
         if login_valid
             @login_view.loggingIn()
-            GameServer.connect()
             GameServer.getUserProfile(profile_url, (err, profile) =>
                 return @login_view.error('profile-url', err) if err
                 CurrentUser.login(profile_url, profile.region, profile.name,
                     char_code, profile.league, race)
-                @create_lobby_view.render()
                 @login_view.hide()
+                @user_settings_view.show()
+                GameServer.joinGlobalLobby()
             )
 
-    createLobby: =>
-        @user_details_view.preventChanges()
-        @create_lobby_view.hide()
-        @lobby_view.reset()
+    showCreateLobby: =>
+        @create_lobby_view.show()
+    
+    showLobby: =>
         @lobby_view.show()
-        GameServer.createLobby()
 
-    listLobbies: =>
-        @user_details_view.preventChanges()
-        @create_lobby_view.hide()
-        @list_lobbies_view.show()
-        GameServer.listLobbies()
+    createLobby: =>
+        GameServer.createLobby()
+        @lobby_view.show()
 
     exitLobby: =>
         GameServer.exitLobby()
-        @lobby_view.hide()
-        @create_lobby_view.show()
-        @user_details_view.allowChanges()
+        GameServer.joinGlobalLobby()
 
-    exitLobbiesList: =>
-        @list_lobbies_view.hide()
-        @create_lobby_view.show()
-        @user_details_view.allowChanges()
-
-    joinLobby: (id) =>
-        @lobby_view.reset()
-        GameServer.joinLobby(id, (err) =>
-            if (err)
-                return @list_lobbies_view.errorJoining(err, id)
-            @list_lobbies_view.hide()
-            @lobby_view.show()
-        )
-
-    openBlocklist: =>
+    showBlocklist: =>
         @blocklist_view.show()
-
-    closeBlocklist: =>
-        @blocklist_view.hide()
 
     addBlocklist: (user) =>
         LobbyOptions.opts.blocked_users[user] = true
@@ -96,13 +77,12 @@ class window.LoginView extends Backbone.View
 
     show: =>
         $(@el).html(render('login-form', races: RACE_OPTS))
-        $('body').append(@el)
+        $('#cgf-sidebar').append(@el)
 
     hide: =>
         $(@el).detach()
 
     login: =>
-        this.$('.clearfix').removeClass('error')
         this.$('input').removeClass('error')
         this.$('.help-inline').remove()
         profile_url = this.$('#login-profile-url').val()
@@ -114,47 +94,50 @@ class window.LoginView extends Backbone.View
         this.login() if e.keyCode is 13
 
     error: (field, msg) =>
-        this.$('#login-' + field + '-cf').addClass('error')
         input = this.$('#login-' + field)
         input.addClass('error')
-        input.after(render('form-error', {msg: msg}))
+        this.$('form').after(render('form-error', {msg: msg}))
         this.$('#login-msg').remove()
         this.$('#login-btn').removeClass('disabled')
 
     loggingIn: =>
-        this.$('#login-btn').before(render('login-msg', {msg: 'Gathering profile data, please wait..'}))
+        this.$('form').after(render('login-msg', {msg: 'Gathering profile data, please wait..'}))
         this.$('#login-btn').addClass('disabled')
 
-class window.UserDetailsView extends Backbone.View
-    id: 'user-details-view'
-
-    className: 'container'
+class window.UserSettingsView extends Backbone.View
+    id: 'user-settings-view'
 
     events:
-        'click #logout-btn': 'logout'
+        'click #find-game-btn': 'findGame'
+        'click #exit-lobby-btn': 'exitLobby'
         'click #open-blocklist-btn': 'openBlocklist'
+        'click #logout-btn': 'logout'
         'change #race-select': 'changeRace'
 
     initialize: =>
-        CurrentUser.bind('change', @render)
+        @in_game = false
+        GameServer.bind('lobbyJoined', this.lobbyJoined)
 
     render: =>
-        race_select = ''
-        if CurrentUser.logged_in
-            race_select = render('user-select',
-                id: 'race'
-                label: 'Race'
-                selected: CurrentUser.race
-                opts: RACE_OPTS
-            )
-        $(@el).html(render('user-details',
+        race_select = render('user-select',
+            id: 'race'
+            label: 'Race'
+            selected: CurrentUser.race
+            opts: RACE_OPTS
+            disabled: @in_game
+        )
+        $(@el).html(render('user-settings',
             user: CurrentUser
             race_select: race_select
+            in_game: @in_game
         ))
 
     show: =>
         this.render()
-        $('#cgf-topbar').append(@el)
+        $('#cgf-sidebar').append(@el)
+
+    hide: =>
+        $(@el).detach()
 
     logout: =>
         CurrentUser.logout()
@@ -164,14 +147,18 @@ class window.UserDetailsView extends Backbone.View
         race = this.$('#race-select option:selected').val()
         CurrentUser.changeRace(race)
 
-    preventChanges: =>
-        this.$('select').attr('disabled', 'disabled')
+    lobbyJoined: (global, players) =>
+        @in_game = not global
+        this.render()
 
-    allowChanges: =>
-        this.$('select').removeAttr('disabled')
+    findGame: =>
+        this.options.app.showCreateLobby()
+
+    exitLobby: =>
+        this.options.app.exitLobby()
 
     openBlocklist: =>
-        this.options.app.openBlocklist()
+        this.options.app.showBlocklist()
 
 class window.BlocklistView extends Backbone.View
     id: 'blocklist-view'
@@ -188,20 +175,16 @@ class window.BlocklistView extends Backbone.View
 
     show: =>
         this.render()
-        $('body').append(@el)
-
-    hide: =>
-        $(@el).detach()
+        $('#cgf-content > *').detach()
+        $('#cgf-content').append(@el)
 
     close: =>
-        this.options.app.closeBlocklist()
+        this.options.app.showLobby()
 
     addOnEnter: (e) =>
         this.add() if e.keyCode is 13
 
     add: =>
-        this.$('.clearfix').removeClass('error')
-        this.$('input').removeClass('error')
         this.$('.help-inline').remove()
         name = this.$('#blocklist-add-name').val()
         char_code = this.$('#blocklist-add-code').val()
@@ -223,7 +206,4 @@ class window.BlocklistView extends Backbone.View
         this.render()
 
     error: (field, msg) =>
-        this.$('#blocklist-' + field + '-cf').addClass('error')
-        input = this.$('#blocklist-' + field)
-        input.addClass('error')
-        input.after(render('form-error', {msg: msg}))
+        this.$('#blocklist-add-btn').after(render('form-error', {msg: msg}))
