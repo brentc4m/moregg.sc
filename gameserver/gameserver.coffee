@@ -4,43 +4,45 @@ sqlite3 = require('sqlite3')
 util = require('util')
 _ = require('underscore')
 
-raceMatches = (p1, p2) ->
-    return p2.race in p1.params.opp_races
-
-leagueMatches = (p1, p2) ->
-    return p2.league in p1.params.opp_leagues
-
-seriesMatches = (p1, p2) ->
-    return _.intersection(p1.params.series, p2.params.series)
-
-mapMatches = (p1, p2) ->
-    return _.intersection(p1.params.maps, p2.params.maps)
-
-blocklistOk = (p1, p2) ->
-    user = p2.name + '.' + p2.char_code
-    return not p1.params.blocked_users[user]
-
 class Player
     constructor: (socket, request) ->
         _.extend(this, request)
         @socket = socket
         @id = socket.id
 
-    matches: (p2) =>
-        p1 = this
-        if p1.region isnt p2.region
+    matches: (other) =>
+        if not this.regionMatches(other)
             return false
-        if not raceMatches(p1, p2) or not raceMatches(p2, p1)
+        if not this.raceMatches(other) or not other.raceMatches(this)
             return false
-        if not leagueMatches(p1, p2) or not leagueMatches(p2, p1)
+        if not this.leagueMatches(other) or not other.leagueMatches(this)
             return false
-        if not blocklistOk(p1, p2) or not blocklistOk(p2, p1)
+        if not this.blocklistOk(other) or not other.blocklistOk(this)
             return false
-        series = seriesMatches(p1, p2)
+        series = this.seriesMatches(other)
         return false if series.length is 0
-        maps = mapMatches(p1, p2)
+        maps = this.mapMatches(other)
         return false if maps.length is 0
         return {series: series, maps: maps}
+
+    regionMatches: (other) ->
+        return @region is other.region
+
+    raceMatches: (other) ->
+        return other.race in @params.opp_races
+
+    leagueMatches: (other) ->
+        return other.league in @params.opp_leagues
+
+    seriesMatches: (other) ->
+        return _.intersection(@params.series, other.params.series)
+
+    mapMatches: (other) ->
+        return _.intersection(@params.maps, other.params.maps)
+
+    blocklistOk: (other) ->
+        user = other.name + '.' + other.char_code
+        return not @params.blocked_users[user]
 
     toJSON: =>
         id: @id
@@ -53,36 +55,75 @@ class Player
         params: @params
 
 class Lobby
-    constructor: (player) ->
-        @players = [player]
+    constructor: (p1, p2, match) ->
+        @players = [p1, p2]
+        p1.socket.emit('playerJoined', p2)
+        p2.socket.emit('playerJoined', p1)
+        match.random_map = match.maps[Math.floor(
+            Math.random()*match.maps.length)]
+        p.socket.emit('lobbyFinished', match) for p in @players
 
     removePlayer: (id) =>
-        @players = _.reject(@players, (p) -> p.id is id)
-        for player in @players
-            player.socket.emit('playerLeft', id)
+        to_return = _.find(@players, (p) -> p.id isnt id)
+        to_return.socket.emit('playerLeft', id)
+        return to_return
 
-    matches: (other_lobby) =>
-        return false if this.finished() or other_lobby.finished()
-        return @players[0].matches(other_lobby.players[0])
-
-    match: (other_lobby) =>
-        match = this.matches(other_lobby)
-        return unless match
-        @players.push(other_lobby.players[0])
-        @players[0].socket.emit('playerJoined', @players[1])
-        @players[1].socket.emit('playerJoined', @players[0])
-        if this.finished()
-            match.random_map = match.maps[Math.floor(
-                Math.random()*match.maps.length)]
-            p.socket.emit('lobbyFinished', match) for p in @players
-
-    finished: =>
-        return @players.length is 2
-    
     sendChat: (id, text) =>
-        to_players = _.reject(@players, (p) -> p.id is id)
-        for p in to_players
-            p.socket.emit('chatReceived', {id: id, text: text})
+        to_player = _.reject(@players, (p) -> p.id is id)[0]
+        to_player.socket.emit('chatReceived', {id: id, text: text})
+
+class LobbyManagerGlobal
+    constructor: ->
+        @pending_players = []
+        @lobbies_by_id = {}
+
+    isPresent: (id) =>
+        return id of @lobbies_by_id or id in (p.id for p in @pending_players)
+
+    addPlayer: (player) =>
+        return if this.isPresent(player.id)
+        @pending_players.push(player)
+        players = {}
+        players[player.id] = player
+        return players
+
+    removePlayer: (id) =>
+        if id of @lobbies_by_id
+            lobby = @lobbies_by_id[id]
+            other_player = lobby.removePlayer(id)
+            @pending_players.push(other_player)
+            delete @lobbies_by_id[id]
+            delete @lobbies_by_id[other_player.id]
+        else
+            @pending_players = _.reject(@pending_players, (p) -> p.id is id)
+
+    matchmake: =>
+        new_pending = []
+        while @pending_players.length > 0
+            player = @pending_players.shift()
+            continue if player.id of @lobbies_by_id
+            matched = false
+            for other_player in @pending_players
+                match = player.matches(other_player)
+                if match
+                    lobby = new Lobby(player, other_player, match)
+                    @lobbies_by_id[player.id] = lobby
+                    @lobbies_by_id[other_player.id] = lobby
+                    matched = true
+                    break
+            new_pending.push(player) if not matched
+        @pending_players = new_pending
+
+    sendChat: (id, text) =>
+        return unless id of @lobbies_by_id
+        @lobbies_by_id[id].sendChat(id, text)
+LobbyManager = new LobbyManagerGlobal()
+setInterval(->
+    try
+        LobbyManager.matchmake()
+    catch err
+        console.log('Exception: ' + err)
+, 5000)
 
 class GlobalLobbyGlobal
     constructor: ->
@@ -117,74 +158,6 @@ class GlobalLobbyGlobal
             p.socket.emit('playerLeft', id) for p in _.values(@players)
             a.emit('playerLeft', id) for a in _.values(@anons)
 GlobalLobby = new GlobalLobbyGlobal()
-
-class LobbyManagerGlobal
-    constructor: ->
-        @pending_lobbies = []
-        @lobbies_by_id = {}
-
-    addPlayer: (player) =>
-        return if player.id of @lobbies_by_id
-        lobby = new Lobby(player)
-        @pending_lobbies.push(lobby)
-        @lobbies_by_id[player.id] = lobby
-        players = {}
-        players[player.id] = player
-        return players
-
-    removePlayer: (id) =>
-        return unless id of @lobbies_by_id
-        lobby = @lobbies_by_id[id]
-        if lobby.finished()
-            lobby.removePlayer(id)
-            @pending_lobbies.push(lobby)
-        else
-            @pending_lobbies = _.without(@pending_lobbies, lobby)
-        delete @lobbies_by_id[id]
-
-    matchmake: =>
-        new_pending = []
-        while @pending_lobbies.length > 0
-            lobby = @pending_lobbies.shift()
-            continue if lobby.finished()
-            merged = false
-            for other_lobby in @pending_lobbies
-                if other_lobby.match(lobby)
-                    for player in other_lobby.players
-                        @lobbies_by_id[player.id] = other_lobby
-                    merged = true
-                    break
-            new_pending.push(lobby) if not merged
-        @pending_lobbies = new_pending
-
-    sendChat: (id, text) =>
-        return unless id of @lobbies_by_id
-        @lobbies_by_id[id].sendChat(id, text)
-
-    getMatchingLobbies: (player) =>
-        fake_lobby = new Lobby(player)
-        return (l.players[0] for l in @pending_lobbies when l.matches(fake_lobby))
-
-    joinLobby: (player, cb) =>
-        if player.id of @lobbies_by_id
-            return cb('You are already in a lobby. Try reloading the page.')
-        new_lobby = new Lobby(player)
-        lobby_to_join = @lobbies_by_id[player.params.lobby_id]
-        if lobby_to_join? and lobby_to_join.matches(new_lobby)
-            cb()
-            lobby_to_join.match(new_lobby)
-            @lobbies_by_id[player.id] = lobby_to_join
-            @pending_lobbies = _.without(@pending_lobbies, lobby_to_join)
-        else
-            cb('Lobby unavailable, please try another.')
-
-LobbyManager = new LobbyManagerGlobal()
-setInterval(->
-    try
-        LobbyManager.matchmake()
-    catch err
-        console.log('Exception: ' + err)
-, 5000)
 
 class UserProfilesGlobal
     LEAGUES:
@@ -297,36 +270,19 @@ io.sockets.on('connection', (socket) ->
                 cb(GlobalLobby.addPlayer(player))
             ))
     ))
-    socket.on('getUserProfile', (profile_url, cb) ->
+    socket.on('getUserProfile', handleErrors((profile_url, cb) ->
         UserProfiles.get(profile_url, cb)
-    )
-    socket.on('createLobby', (req, cb) ->
-        UserProfiles.get(req.profile_url, handleErrors((err, profile) ->
+    ))
+    socket.on('createLobby', handleErrors((req, cb) ->
+        UserProfiles.get(req.profile_url, (err, profile) ->
             return if err
             req.league = profile.league
             player = new Player(socket, req)
             players = LobbyManager.addPlayer(player)
             GlobalLobby.removeByID(player.id)
             cb(players)
-        ))
-    )
-    socket.on('listLobbies', (req, cb) ->
-        UserProfiles.get(req.profile_url, handleErrors((err, profile) ->
-            return if err
-            req.league = profile.league
-            player = new Player(socket, req)
-            lobbies = LobbyManager.getMatchingLobbies(player)
-            cb(lobbies)
-        ))
-    )
-    socket.on('joinLobby', (req, cb) ->
-        UserProfiles.get(req.profile_url, handleErrors((err, profile) ->
-            return if err
-            req.league = profile.league
-            player = new Player(socket, req)
-            LobbyManager.joinLobby(player, cb)
-        ))
-    )
+        )
+    ))
     socket.on('sendChat', handleErrors((text) ->
         if GlobalLobby.isPresent(socket.id)
             GlobalLobby.sendChat(socket.id, text)
