@@ -6,7 +6,7 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Designed and built with all the love in the world @twitter by @mdo and @fat.
- * Date: Wed Jan 25 12:34:03 PST 2012
+ * Date: Wed Jan 25 18:05:18 PST 2012
  */
 article,
 aside,
@@ -152,11 +152,11 @@ body {
   width: 100%;
 }
 a {
-  color: #0088cc;
+  color: #189acb;
   text-decoration: none;
 }
 a:hover {
-  color: #005580;
+  color: #106687;
   text-decoration: underline;
 }
 .row {
@@ -1440,7 +1440,7 @@ i {
 .dropdown-menu li > a:hover, .dropdown-menu .active > a, .dropdown-menu .active > a:hover {
   color: #ffffff;
   text-decoration: none;
-  background-color: #0088cc;
+  background-color: #189acb;
 }
 .dropdown.open .dropdown-toggle {
   color: #ffffff;
@@ -1554,7 +1554,7 @@ i {
 .nav.list .active > a {
   color: #ffffff;
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
-  background-color: #0088cc;
+  background-color: #189acb;
 }
 .tabs, .pills {
   *zoom: 1;
@@ -1613,7 +1613,7 @@ i {
 }
 .pills .active > a, .pills .active > a:hover {
   color: #ffffff;
-  background-color: #0088cc;
+  background-color: #189acb;
 }
 .nav.stacked > li {
   float: none;
@@ -1660,11 +1660,11 @@ i {
   border-radius: 4px;
 }
 .tabs .dropdown-toggle .caret, .pills .dropdown-toggle .caret {
-  border-top-color: #0088cc;
+  border-top-color: #189acb;
   margin-top: 6px;
 }
 .tabs .dropdown-toggle:hover .caret, .pills .dropdown-toggle:hover .caret {
-  border-top-color: #005580;
+  border-top-color: #106687;
 }
 .tabs .active .dropdown-toggle .caret, .pills .active .dropdown-toggle .caret {
   border-top-color: #333333;
@@ -2453,15 +2453,15 @@ i {
   color: #ffffff;
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
   background-color: #0064cd;
-  background-image: -khtml-gradient(linear, left top, left bottom, from(#049cdb), to(#0064cd));
-  background-image: -moz-linear-gradient(top, #049cdb, #0064cd);
-  background-image: -ms-linear-gradient(top, #049cdb, #0064cd);
-  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #049cdb), color-stop(100%, #0064cd));
-  background-image: -webkit-linear-gradient(top, #049cdb, #0064cd);
-  background-image: -o-linear-gradient(top, #049cdb, #0064cd);
-  background-image: linear-gradient(top, #049cdb, #0064cd);
+  background-image: -khtml-gradient(linear, left top, left bottom, from(#189acb), to(#0064cd));
+  background-image: -moz-linear-gradient(top, #189acb, #0064cd);
+  background-image: -ms-linear-gradient(top, #189acb, #0064cd);
+  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #189acb), color-stop(100%, #0064cd));
+  background-image: -webkit-linear-gradient(top, #189acb, #0064cd);
+  background-image: -o-linear-gradient(top, #189acb, #0064cd);
+  background-image: linear-gradient(top, #189acb, #0064cd);
   background-repeat: repeat-x;
-  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#049cdb', endColorstr='#0064cd', GradientType=0);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#189acb', endColorstr='#0064cd', GradientType=0);
   border-color: #0064cd #0064cd #003f81;
   border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
 }
@@ -2693,7 +2693,7 @@ button.btn::-moz-focus-inner, input[type=submit].btn::-moz-focus-inner {
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075);
 }
 a.thumbnail:hover {
-  border-color: #0088cc;
+  border-color: #189acb;
   -webkit-box-shadow: 0 1px 4px rgba(0, 105, 214, 0.25);
   -moz-box-shadow: 0 1px 4px rgba(0, 105, 214, 0.25);
   box-shadow: 0 1px 4px rgba(0, 105, 214, 0.25);
@@ -2726,7 +2726,7 @@ a.thumbnail:hover {
   background-color: #46a546;
 }
 .label.notice {
-  background-color: #62cffc;
+  background-color: #74cdef;
 }
 @-webkit-keyframes progress-bar-stripes {
   from {

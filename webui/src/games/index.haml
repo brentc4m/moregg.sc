@@ -1,33 +1,35 @@
 - @layout = "app"
 
-.container
-  #cgf-header
-    %h1
-      %a(href="/") More GG
-    %ul.nav
-      %li
+#cgf-header
+  .container
+    %a(href="/")
+      %img.logo(src="/img/logo.png")
+    %ul
+      %li.selected
         %a(href="/games/") Find Games
       %li
         %a(href="/faq/") FAQ
       %li
         %a(href="/about/") About
+.container
   .row
     #cgf-content.span9
     #cgf-sidebar.span3
-  #cgf-footer
-
+#cgf-footer
+  .container
+    &copy; 2012 moregg.sc
 %script(language="javascript" type="text/javascript")
   $(function () { new CGFView().render(); });
 
 %script#user-select-tmpl(type="text/template")
-  <select id="<%= id + '-select' %>" class="medium"<% if (disabled) { %>disabled="disabled"<% } %>>
+  <select id="<%= id + '-select' %>" class="span2"<% if (disabled) { %>disabled="disabled"<% } %>>
   <% for (var i=0; i<opts.length; i++) { %>
   <option value="<%= opts[i].val %>"<% if (selected === opts[i].val) { %> selected="selected"<% } %>><%= opts[i].label %></option>
   <% } %>
   </select>
 
 %script#user-settings-tmpl(type="text/template")
-  %h3 Settings
+  %h2 Settings
   %ul.unstyled
     %li
       %i.user
@@ -36,10 +38,8 @@
       %i.flag
       <%= user.region %>
     %li
-      %i.bookmark
-      <span class="league-<%= user.league %>">&nbsp;</span>
+      <img src="/img/l/<%= user.league %>_m.png" />
     %li
-      %i.cog
       <%= race_select %>
     <% if (in_game) { %>
     %li
@@ -124,17 +124,17 @@
     <%= fields %>
     %fieldset.form-actions
       %button#create-lobby-btn.btn.primary(type="button") Find game
-      %button#close-create-lobby-btn.btn(type="button") Back to lobby
+      %button#close-create-lobby-btn.btn.primary(type="button") Back to lobby
 
 %script#lobby-tmpl(type="text/template")
   %h2 Lobby
   .row
+    .span3
+      #user-list.panel-container
     .span6
-      %h3 Chat
-      #chat-box
+      #chat-box.panel-container
         #msg-list
-      %input#msg-box(type="text")/
-    #user-list.span3
+      %input#msg-box.span6(type="text")/
 
 %script#lobby-players-tmpl(type="text/template")
   %h3 Players

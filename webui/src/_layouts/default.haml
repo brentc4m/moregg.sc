@@ -2,21 +2,22 @@
 %html
   %head
     %title More GG - Starcraft 2 Custom Game Finder
-    = stylesheets
+    = stylesheets 'bootstrap'
+    = stylesheets 'default'
   %body
+    #cgf-header
+      .container
+        %a(href="/")
+          %img.logo(src="/img/logo.png")
+        %ul
+          %li
+            %a(href="/games/") Find Games
+          %li
+            %a(href="/faq/") FAQ
+          %li
+            %a(href="/about/") About
     .container
-      .topbar
-        #cgf-topbar.topbar-inner
-          .container
-            %a.brand(href="/")
-              more
-              %strong gg
-            %ul.nav
-              %li
-                %a(href="/faq/") FAQ
-            %ul.nav.secondary-nav
-              %li
-                %a(href="/app/") Start Playing
       = yield
-      #cgf-footer.pull-right
-        Copyright 2012 Brent Hill moregg.sc
+    #cgf-footer
+      .container
+        &copy; 2012 moregg.sc
