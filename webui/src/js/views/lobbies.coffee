@@ -116,11 +116,9 @@ class window.CreateLobbyView extends View
     close: =>
         @app.showLobby()
 
-    validate: (vals, id, msg) =>
+    validate: (vals, id) =>
         if vals.length is 0
             this.$('#' + id + '-cg').addClass('error')
-            this.$('#' + id + '-cg .input').append(
-                this._render('form-error', {msg: msg}))
             return false
         return true
 
@@ -129,14 +127,10 @@ class window.CreateLobbyView extends View
         this.$('.help-inline').remove()
         config = @app.getConfig()
         opts_valid = true
-        opts_valid &= this.validate(config.get('opp_races'), 'opp-races',
-            'Choose at least one race')
-        opts_valid &= this.validate(config.get('opp_leagues'), 'opp-leagues',
-            'Choose at least one league')
-        opts_valid &= this.validate(config.get('series'), 'series',
-            'Choose at least one series type')
-        opts_valid &= this.validate(config.get('maps'), 'maps',
-            'Choose at least one map')
+        opts_valid &= this.validate(config.get('opp_races'), 'opp-races')
+        opts_valid &= this.validate(config.get('opp_leagues'), 'opp-leagues')
+        opts_valid &= this.validate(config.get('series'), 'series')
+        opts_valid &= this.validate(config.get('maps'), 'maps')
         return opts_valid
 
     createLobby: =>
