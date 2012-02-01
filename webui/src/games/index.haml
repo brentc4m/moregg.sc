@@ -18,8 +18,9 @@
 #cgf-footer
   .container
     &copy; 2012 moregg.sc
+
 %script(language="javascript" type="text/javascript")
-  $(function () { new CGFView().render(); });
+  $(function () { new App().start(); });
 
 %script#user-select-tmpl(type="text/template")
   <select id="<%= id + '-select' %>" class="span2"<% if (disabled) { %>disabled="disabled"<% } %>>
@@ -71,32 +72,34 @@
   #login-msg <%= msg %>
 
 %script#checkbox-group-tmpl(type="text/template")
-  %fieldset.control-group
-    %label.control-label <%= label %>
-    .controls
-      <% for (var i=0; i<opts.length; i++) { %>
-      %label.checkbox.inline
-        <input type="checkbox" name="<%= name %>" value="<%= opts[i].val %>" <% if (checked.indexOf(opts[i].val) != -1) { %>checked="checked"<% } %>/>
-        <%= opts[i].label %>
-      <% } %>
+  <fieldset id="<%= name + '-cg' %>" class="control-group">
+  %label.control-label <%= label %>
+  .controls
+    <% for (var i=0; i<opts.length; i++) { %>
+    %label.checkbox.inline
+      <input type="checkbox" name="<%= name %>" value="<%= opts[i].val %>" <% if (checked.indexOf(opts[i].val) != -1) { %>checked="checked"<% } %>/>
+      <%= opts[i].label %>
+    <% } %>
+  </fieldset>
 
 %script#split-checkbox-group-tmpl(type="text/template")
-  %fieldset.control-group
-    %label.control-label <%= label %>
-    .controls
-      .row
-        <% var half = Math.ceil(opts.length/2); %>
-        <% for (var c=0; c<2; c++) { %>
-        .span3(style="padding-top: 6px")
-          <% for (var i=c*half; i<Math.min((c+1)*half, opts.length); i++) { %>
-          %label.checkbox
-            <input type="checkbox" name="<%= name %>" value="<%= opts[i].val %>" <% if (checked.indexOf(opts[i].val) != -1) { %>checked="checked"<% } %>/>
-            <%= opts[i].label %>
-          <% } %>
+  <fieldset id="<%= name + '-cg' %>" class="control-group">
+  %label.control-label <%= label %>
+  .controls
+    .row
+      <% var half = Math.ceil(opts.length/2); %>
+      <% for (var c=0; c<2; c++) { %>
+      .span3(style="padding-top: 6px")
+        <% for (var i=c*half; i<Math.min((c+1)*half, opts.length); i++) { %>
+        %label.checkbox
+          <input type="checkbox" name="<%= name %>" value="<%= opts[i].val %>" <% if (checked.indexOf(opts[i].val) != -1) { %>checked="checked"<% } %>/>
+          <%= opts[i].label %>
         <% } %>
+      <% } %>
+  </fieldset>
 
 %script#map-field-tmpl(type="text/template")
-  %fieldset#maps-fs.control-group
+  %fieldset#maps-cg.control-group
     %label.control-label Maps
     .controls
       %ul#map-tabs.nav.tabs

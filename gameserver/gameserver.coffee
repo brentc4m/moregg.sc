@@ -10,10 +10,11 @@ logError = (err) ->
 process.on('uncaughtException', logError)
 
 class Player
-    constructor: (socket, request) ->
-        _.extend(this, request)
+    constructor: (socket, player_info, lobby_opts) ->
+        _.extend(this, player_info)
         @socket = socket
         @id = socket.id
+        @params = lobby_opts
 
     matches: (other) =>
         if not this.regionMatches(other)
@@ -57,7 +58,6 @@ class Player
         region: @region
         league: @league
         race: @race
-        params: @params
 
 class Lobby
     constructor: (p1, p2, match) ->
@@ -267,25 +267,25 @@ class GameServer
             catch err
                 logError(err)
         
-    joinGlobalLobby: (socket, req, cb) =>
-        if req is null
+    joinGlobalLobby: (socket, player_info, cb) =>
+        if player_info is null
             cb(GlobalLobby.addAnon(socket))
         else
-            UserProfiles.get(req.profile_url, (err, profile) ->
+            UserProfiles.get(player_info.profile_url, (err, profile) ->
                 return if err
-                req.league = profile.league
-                player = new Player(socket, req)
+                player_info = _.extend(player_info, profile)
+                player = new Player(socket, player_info)
                 cb(GlobalLobby.addPlayer(player))
             )
 
     getUserProfile: (socket, profile_url, cb) =>
         UserProfiles.get(profile_url, cb)
 
-    createLobby: (socket, req, cb) =>
-        UserProfiles.get(req.profile_url, (err, profile) ->
+    createLobby: (socket, player_info, lobby_opts, cb) =>
+        UserProfiles.get(player_info.profile_url, (err, profile) ->
             return if err
-            req.league = profile.league
-            player = new Player(socket, req)
+            player_info = _.extend(player_info, profile)
+            player = new Player(socket, player_info, lobby_opts)
             players = LobbyManager.addPlayer(player)
             GlobalLobby.removeByID(player.id)
             cb(players)

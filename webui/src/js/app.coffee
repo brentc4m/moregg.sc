@@ -2,8 +2,10 @@
 class window.Events
 Events.prototype extends Backbone.Events
 
-class LobbyOptionsGlobal
+class window.UserConfig
     defaults:
+        char_code: null
+        race: null
         opp_races: ['r', 't', 'z', 'p']
         opp_leagues: []
         maps: ['blz_ap', 'blz_as', 'blz_ev', 'blz_me', 'blz_sp', 'blz_tdale',
@@ -11,71 +13,24 @@ class LobbyOptionsGlobal
         series: ['bo1']
         blocked_users: {}
 
-    constructor: ->
-        if 'cgf.lobby_options' of localStorage
-            @opts = JSON.parse(localStorage['cgf.lobby_options'])
-        else
-            @opts = {}
-        @opts = _.defaults(@opts, @defaults)
-        this.save()
+    constructor: (profile_url) ->
+        @key = 'userconfig.' + profile_url
+        @data = if @key of localStorage then JSON.parse(localStorage[@key]) else {}
+        @data = _.defaults(@data, @defaults)
 
-    save: =>
-        localStorage['cgf.lobby_options'] = JSON.stringify(@opts)
+    get: (key) =>
+        return @data[key]
+    
+    getSet: (keys) =>
+        ret = {}
+        ret[k] = @data[k] for k in keys
+        return ret
+    
+    set: (key, val) =>
+        @data[key] = val
+        localStorage[@key] = JSON.stringify(@data)
 
-    clear: =>
-        delete localStorage['cgf.lobby_options']
-window.LobbyOptions = new LobbyOptionsGlobal()
-
-class CurrentUserGlobal
-    attrs: ['name', 'char_code', 'profile_url', 'region', 'race', 'league']
-
-    constructor: ->
-        if localStorage['cgf.logged_in']
-            for attr in @attrs
-                this[attr] = localStorage['cgf.' + attr]
-            @logged_in = true
-        else
-            @logged_in = false
-
-    toJSON: =>
-        name: @name
-        char_code: @char_code
-        profile_url: @profile_url
-        region: @region
-        league: @league
-        race: @race
-
-    logout: =>
-        for attr in @attrs
-            delete localStorage['cgf.' + attr]
-            delete this[attr]
-        delete localStorage['cgf.logged_in']
-        @logged_in = false
-        LobbyOptions.clear()
-
-    saveAttrs: =>
-        for attr in @attrs
-            localStorage['cgf.' + attr] = this[attr]
-
-    login: (profile_url, region, name, char_code, league, race) =>
-        @name = name
-        @char_code = char_code
-        @profile_url = profile_url
-        @region = region
-        @race = race
-        @league = league
-        this.saveAttrs()
-        LobbyOptions.opts.opp_leagues = [league]
-        LobbyOptions.save()
-        localStorage['cgf.logged_in'] = 'true'
-        @logged_in = true
-
-    changeRace: (race) =>
-        @race = race
-        this.saveAttrs()
-window.CurrentUser = new CurrentUserGlobal()
-
-class GameServerGlobal extends Events
+class window.GameServer extends Events
     connect: ->
         this.trigger('connecting')
         @socket = io.connect('http://localhost:5000')
@@ -101,21 +56,13 @@ class GameServerGlobal extends Events
     getUserProfile: (profile_url, cb) =>
         @socket.emit('getUserProfile', profile_url, cb)
 
-    joinGlobalLobby: =>
-        player = if CurrentUser.logged_in then CurrentUser.toJSON() else null
+    joinGlobalLobby: (player) =>
         @socket.emit('joinGlobalLobby', player, (players) =>
             this.trigger('lobbyJoined', true, players)
         )
 
-    _getLobbyRequest: =>
-        request = CurrentUser.toJSON()
-        delete request.league # server determines league
-        request.params = LobbyOptions.opts
-        return request
-
-    createLobby: =>
-        request = this._getLobbyRequest()
-        @socket.emit('createLobby', request, (players) =>
+    createLobby: (player, lobby_opts) =>
+        @socket.emit('createLobby', player, lobby_opts, (players) =>
             this.trigger('lobbyJoined', false, players)
         )
 
@@ -127,15 +74,26 @@ class GameServerGlobal extends Events
 
     getID: =>
         return @socket.socket.sessionid
-window.GameServer = new GameServerGlobal()
 
-window.getTemplate = _.memoize((id) ->
-    return _.template($('#' + id + '-tmpl').html())
-)
+class window.View extends Backbone.View
+    container_id: 'cgf-content'
 
-window.render = (id, data) ->
-    tmpl = getTemplate(id)
-    return tmpl(data)
+    constructor: (app) ->
+        @app = app
+        super()
+
+    show: =>
+        this.render()
+        $('#' + @container_id + ' > *').detach()
+        $('#' + @container_id).append(@el)
+
+    _getTemplate: _.memoize((id) ->
+        return _.template($('#' + id + '-tmpl').html())
+    )
+
+    _render: (id, data) ->
+        tmpl = this._getTemplate(id)
+        return tmpl(data)
 
 window.LEAGUE_OPTS = [
     {val: 'n', label: 'Unranked'}

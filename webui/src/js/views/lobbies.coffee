@@ -75,7 +75,7 @@ window.MAP_LABELS = {}
 for map in _.flatten(_.pluck(MAPS, 'maps'))
     MAP_LABELS[map.val] = map.label
 
-class window.CreateLobbyView extends Backbone.View
+class window.CreateLobbyView extends View
     id: 'create-lobby-view'
 
     events:
@@ -88,86 +88,79 @@ class window.CreateLobbyView extends Backbone.View
         'change input[name="series"]': 'changeSeries'
 
     render: =>
-        fields = render('split-checkbox-group',
+        config = @app.getConfig()
+        fields = this._render('split-checkbox-group',
             name: 'opp-leagues'
             label: "Opponent's league"
-            checked: LobbyOptions.opts.opp_leagues
+            checked: config.get('opp_leagues')
             opts: LEAGUE_OPTS
         )
-        fields += render('checkbox-group',
+        fields += this._render('checkbox-group',
             name: 'opp-races'
             label: "Opponent's race"
-            checked: LobbyOptions.opts.opp_races
+            checked: config.get('opp_races')
             opts: RACE_OPTS
         )
-        fields += render('checkbox-group',
+        fields += this._render('checkbox-group',
             name: 'series'
             label: 'Series type'
-            checked: LobbyOptions.opts.series
+            checked: config.get('series')
             opts: SERIES_OPTS
         )
-        fields += render('map-field',
+        fields += this._render('map-field',
             sections: MAPS
-            checked: LobbyOptions.opts.maps
+            checked: config.get('maps')
         )
-        $(@el).html(render('create-lobby', {fields: fields}))
-
-    show: =>
-        this.render()
-        $('#cgf-content > *').detach()
-        $('#cgf-content').append(@el)
+        $(@el).html(this._render('create-lobby', {fields: fields}))
 
     close: =>
-        this.options.app.showLobby()
+        @app.showLobby()
 
     validate: (vals, id, msg) =>
         if vals.length is 0
-            this.$('#' + id + '-cf').addClass('error')
-            this.$('#' + id + '-cf .input').append(
-                render('form-error', {msg: msg}))
+            this.$('#' + id + '-cg').addClass('error')
+            this.$('#' + id + '-cg .input').append(
+                this._render('form-error', {msg: msg}))
             return false
         return true
 
     validateOptions: =>
-        this.$('.clearfix').removeClass('error')
+        this.$('.control-group').removeClass('error')
         this.$('.help-inline').remove()
+        config = @app.getConfig()
         opts_valid = true
-        opts_valid &= this.validate(LobbyOptions.opts.opp_races, 'opp-races',
+        opts_valid &= this.validate(config.get('opp_races'), 'opp-races',
             'Choose at least one race')
-        opts_valid &= this.validate(LobbyOptions.opts.opp_leagues, 'opp-leagues',
+        opts_valid &= this.validate(config.get('opp_leagues'), 'opp-leagues',
             'Choose at least one league')
-        opts_valid &= this.validate(LobbyOptions.opts.series, 'series',
+        opts_valid &= this.validate(config.get('series'), 'series',
             'Choose at least one series type')
-        opts_valid &= this.validate(LobbyOptions.opts.maps, 'maps',
+        opts_valid &= this.validate(config.get('maps'), 'maps',
             'Choose at least one map')
         return opts_valid
 
     createLobby: =>
-        this.options.app.createLobby() if this.validateOptions()
+        @app.createLobby() if this.validateOptions()
 
     changeOppRaces: =>
         checked = this.$('input[name="opp-races"]:checked')
         races = (c.value for c in checked)
-        LobbyOptions.opts.opp_races = races
-        LobbyOptions.save()
+        @app.getConfig().set('opp_races', races)
 
     changeOppLeagues: =>
         checked = this.$('input[name="opp-leagues"]:checked')
         leagues = (c.value for c in checked)
-        LobbyOptions.opts.opp_leagues = leagues
-        LobbyOptions.save()
+        @app.getConfig().set('opp_leagues', leagues)
 
     changeMaps: =>
         checked = this.$('input[name="maps"]:checked')
         maps = (c.value for c in checked)
-        LobbyOptions.opts.maps = maps
-        LobbyOptions.save()
+        @app.getConfig().set('maps', maps)
 
     changeSeries: =>
         checked = this.$('input[name="series"]:checked')
         series = (c.value for c in checked)
-        LobbyOptions.opts.series = series
-        LobbyOptions.save()
+        @app.getConfig().set('series', series)
 
     changeMapsTab: (e) =>
         e.preventDefault()
@@ -176,7 +169,7 @@ class window.CreateLobbyView extends Backbone.View
         this.$('.tab-content div.active').removeClass('active')
         this.$(e.target.hash).addClass('active')
 
-class window.LobbyView extends Backbone.View
+class window.LobbyView extends View
     id: 'lobby-view'
 
     events:
@@ -185,44 +178,45 @@ class window.LobbyView extends Backbone.View
         'click #exit-lobby-btn': 'exitLobby'
 
     initialize: =>
-        GameServer.bind('connecting', this.connecting)
-        GameServer.bind('lobbyJoined', this.lobbyJoined)
-        GameServer.bind('playerJoined', this.playerJoined)
-        GameServer.bind('playerLeft', this.playerLeft)
-        GameServer.bind('chatReceived', this.chatReceived)
-        GameServer.bind('lobbyFinished', this.lobbyFinished)
         @in_global = false
-        @user_id = null
         @players = {}
         @last_chat_times = []
         @chat_blocked = false
-        $(@el).html(render('lobby'))
+        $(@el).html(this._render('lobby'))
         this.renderPlayers()
 
+        server = @app.getServer()
+        server.bind('connecting', this.connecting)
+        server.bind('lobbyJoined', this.lobbyJoined)
+        server.bind('playerJoined', this.playerJoined)
+        server.bind('playerLeft', this.playerLeft)
+        server.bind('chatReceived', this.chatReceived)
+        server.bind('lobbyFinished', this.lobbyFinished)
+
     renderPlayers: =>
-        this.$('#user-list').html(render('lobby-players',
+        this.$('#user-list').html(this._render('lobby-players',
             players: _.values(@players)
-            player_link: (player_info) ->
-                return render('player-link', player_info)
+            player_link: (player_info) =>
+                return this._render('player-link', player_info)
         ))
 
     show: =>
-        $('#cgf-content > *').detach()
-        $('#cgf-content').append(@el)
+        super()
         this.$('#msg-box').focus()
 
     connecting: =>
         this.addMsg('Connecting to server..')
 
     lobbyJoined: (global, players) =>
-        if CurrentUser.logged_in
-            @user_id = GameServer.getID()
-            players[@user_id].this_player = true
+        if @app.isLoggedIn()
+            players[@app.getServer().getID()].this_player = true
+
         if global
             this.addMsg('Global lobby joined')
         else
             this.addMsg('Private lobby joined')
             this.addMsg('Searching for players..')
+
         @players = players
         @in_game = not global
         this.renderPlayers()
@@ -254,18 +248,18 @@ class window.LobbyView extends Backbone.View
         this.addMsg('First map: ' + MAP_LABELS[game_info.random_map])
 
     exitLobby: =>
-        this.options.app.exitLobby()
+        @app.exitLobby()
 
     sendChat: =>
         msg_box = this.$('#msg-box')
         msg = msg_box.val()
         return if not msg
         msg_box.val('')
-        if not CurrentUser.logged_in
+        if not @app.isLoggedIn()
             this.addMsg('You are not logged in. Login to chat!')
-        if this.rateOk()
-            this.chatReceived({id: @user_id, text: msg})
-            GameServer.sendChat(msg)
+        else if this.rateOk()
+            this.chatReceived({id: @app.getServer().getID(), text: msg})
+            @app.getServer().sendChat(msg)
 
     sendChatOnEnter: (e) =>
         this.sendChat() if e.keyCode is 13
@@ -274,12 +268,12 @@ class window.LobbyView extends Backbone.View
         e.preventDefault()
         this.$('.alert-message').remove()
         player = e.target.hash.slice(1)
-        this.options.app.addBlocklist(player)
-        $(@el).prepend(render('alert-message', {type: 'success', msg: player + ' successfully blocked. You will no longer see games with this player.'}))
+        @app.addToBlocklist(player)
+        $(@el).prepend(this._render('alert-message', {type: 'success', msg: player + ' successfully blocked. You will no longer see games with this player.'}))
 
     addMsg: (msg) =>
         timestamp = new Date().toString('HH:mm:ss')
-        this.$('#msg-list').append(render('chat-msg',
+        this.$('#msg-list').append(this._render('chat-msg',
             timestamp: timestamp
             msg: msg
         ))
@@ -310,4 +304,4 @@ class window.LobbyView extends Backbone.View
 
     playerLink: (id) =>
         player_info = @players[id]
-        return render('player-link', {player: player_info})
+        return this._render('player-link', {player: player_info})
