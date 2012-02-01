@@ -4,6 +4,11 @@ sqlite3 = require('sqlite3')
 util = require('util')
 _ = require('underscore')
 
+logError = (err) ->
+    util.log(err.stack)
+
+process.on('uncaughtException', logError)
+
 class Player
     constructor: (socket, request) ->
         _.extend(this, request)
@@ -118,12 +123,7 @@ class LobbyManagerGlobal
         return unless id of @lobbies_by_id
         @lobbies_by_id[id].sendChat(id, text)
 LobbyManager = new LobbyManagerGlobal()
-setInterval(->
-    try
-        LobbyManager.matchmake()
-    catch err
-        console.log('Exception: ' + err)
-, 5000)
+setInterval(LobbyManager.matchmake, 5000)
 
 class GlobalLobbyGlobal
     constructor: ->
@@ -248,32 +248,40 @@ class UserProfilesGlobal
         )
 UserProfiles = new UserProfilesGlobal()
 
-io = socketio.listen(5000)
-io.set('log level', 2)
+class GameServer
+    start: ->
+        @io = socketio.listen(5000)
+        @io.set('log level', 2)
+        @io.sockets.on('connection', (socket) =>
+            fns = _.functions(this)
+            fns = _.reject(fns, (fn) -> fn is 'start' or fn[0] is '_')
+            socket.on(fn, this._event(this[fn], socket)) for fn in fns
+        )
 
-handleErrors = (fn) ->
-    return ->
-        try
-            return fn.apply(this, arguments)
-        catch err
-            console.log('Exception: ' + err)
-
-io.sockets.on('connection', (socket) ->
-    socket.on('joinGlobalLobby', handleErrors((req, cb) ->
+    _event: (fn, socket) ->
+        return ->
+            args = _.toArray(arguments)
+            args.unshift(socket)
+            try
+                return fn.apply(this, args)
+            catch err
+                logError(err)
+        
+    joinGlobalLobby: (socket, req, cb) =>
         if req is null
             cb(GlobalLobby.addAnon(socket))
         else
-            UserProfiles.get(req.profile_url, handleErrors((err, profile) ->
+            UserProfiles.get(req.profile_url, (err, profile) ->
                 return if err
                 req.league = profile.league
                 player = new Player(socket, req)
                 cb(GlobalLobby.addPlayer(player))
-            ))
-    ))
-    socket.on('getUserProfile', handleErrors((profile_url, cb) ->
+            )
+
+    getUserProfile: (socket, profile_url, cb) =>
         UserProfiles.get(profile_url, cb)
-    ))
-    socket.on('createLobby', handleErrors((req, cb) ->
+
+    createLobby: (socket, req, cb) =>
         UserProfiles.get(req.profile_url, (err, profile) ->
             return if err
             req.league = profile.league
@@ -282,18 +290,18 @@ io.sockets.on('connection', (socket) ->
             GlobalLobby.removeByID(player.id)
             cb(players)
         )
-    ))
-    socket.on('sendChat', handleErrors((text) ->
+
+    sendChat: (socket, text) =>
         if GlobalLobby.isPresent(socket.id)
             GlobalLobby.sendChat(socket.id, text)
         else
             LobbyManager.sendChat(socket.id, text)
-    ))
-    socket.on('exitLobby', handleErrors(->
+
+    exitLobby: (socket) =>
         LobbyManager.removePlayer(socket.id)
-    ))
-    socket.on('disconnect', handleErrors(->
+
+    disconnect: (socket) =>
         GlobalLobby.removeByID(socket.id)
         LobbyManager.removePlayer(socket.id)
-    ))
-)
+
+new GameServer().start() if require.main is module
