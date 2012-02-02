@@ -71,6 +71,9 @@ class window.App
 
     getConfig: =>
         return @config
+    
+    getRegion: =>
+        return if this.isLoggedIn() then @session['region'] else 'AM'
 
     addToBlocklist: (player) =>
         blocked = @config.get('blocked_users')
@@ -166,7 +169,9 @@ class window.UserSettingsView extends View
 
     initialize: =>
         @in_game = false
-        @app.getServer().bind('lobbyJoined', this.lobbyJoined)
+        server = @app.getServer()
+        server.bind('lobbyJoined', this.lobbyJoined)
+        server.bind('globalLobbyJoined', this.globalLobbyJoined)
 
     render: =>
         race_select = this._render('user-select',
@@ -189,9 +194,13 @@ class window.UserSettingsView extends View
         race = this.$('#race-select option:selected').val()
         @app.getConfig().set('race', race)
 
-    lobbyJoined: (global, players) =>
+    lobbyJoined: =>
+        @in_game = true
+        this.render()
+
+    globalLobbyJoined: =>
         if @app.isLoggedIn()
-            @in_game = not global
+            @in_game = false
             this.render()
 
     findGame: =>

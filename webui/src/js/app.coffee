@@ -58,12 +58,12 @@ class window.GameServer extends Events
 
     joinGlobalLobby: (player) =>
         @socket.emit('joinGlobalLobby', player, (players) =>
-            this.trigger('lobbyJoined', true, players)
+            this.trigger('globalLobbyJoined', players)
         )
 
     createLobby: (player, lobby_opts) =>
         @socket.emit('createLobby', player, lobby_opts, (players) =>
-            this.trigger('lobbyJoined', false, players)
+            this.trigger('lobbyJoined', players)
         )
 
     sendChat: (msg) =>

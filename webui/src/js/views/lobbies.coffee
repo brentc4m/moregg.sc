@@ -172,7 +172,7 @@ class window.LobbyView extends View
         'click #exit-lobby-btn': 'exitLobby'
 
     initialize: =>
-        @in_global = false
+        @in_game = false
         @players = {}
         @last_chat_times = []
         @chat_blocked = false
@@ -182,6 +182,7 @@ class window.LobbyView extends View
         server = @app.getServer()
         server.bind('connecting', this.connecting)
         server.bind('lobbyJoined', this.lobbyJoined)
+        server.bind('globalLobbyJoined', this.globalLobbyJoined)
         server.bind('playerJoined', this.playerJoined)
         server.bind('playerLeft', this.playerLeft)
         server.bind('chatReceived', this.chatReceived)
@@ -201,19 +202,16 @@ class window.LobbyView extends View
     connecting: =>
         this.addMsg('Connecting to server..')
 
-    lobbyJoined: (global, players) =>
-        if @app.isLoggedIn()
-            players[@app.getServer().getID()].this_player = true
+    lobbyJoined: (players) =>
+        @in_game = true
+        this._updatePlayers(players)
+        this.addMsg('Private lobby joined')
+        this.addMsg('Searching for players..')
 
-        if global
-            this.addMsg('Global lobby joined')
-        else
-            this.addMsg('Private lobby joined')
-            this.addMsg('Searching for players..')
-
-        @players = players
-        @in_game = not global
-        this.renderPlayers()
+    globalLobbyJoined: (players) =>
+        @in_game = false
+        this._updatePlayers(players)
+        this.addMsg('Global ' + @app.getRegion() + ' lobby joined')
 
     playerJoined: (player_info) =>
         @players[player_info.id] = player_info
@@ -299,3 +297,9 @@ class window.LobbyView extends View
     playerLink: (id) =>
         player_info = @players[id]
         return this._render('player-link', {player: player_info})
+    
+    _updatePlayers: (players) =>
+        if @app.isLoggedIn()
+            players[@app.getServer().getID()].this_player = true
+        @players = players
+        this.renderPlayers()

@@ -77,7 +77,7 @@ class Lobby
         to_player = _.reject(@players, (p) -> p.id is id)[0]
         to_player.socket.emit('chatReceived', {id: id, text: text})
 
-class LobbyManagerGlobal
+class LobbyManager
     constructor: ->
         @pending_players = []
         @lobbies_by_id = {}
@@ -122,10 +122,8 @@ class LobbyManagerGlobal
     sendChat: (id, text) =>
         return unless id of @lobbies_by_id
         @lobbies_by_id[id].sendChat(id, text)
-LobbyManager = new LobbyManagerGlobal()
-setInterval(LobbyManager.matchmake, 5000)
 
-class GlobalLobbyGlobal
+class GlobalLobby
     constructor: ->
         @players = {}
         @anons = {}
@@ -157,9 +155,8 @@ class GlobalLobbyGlobal
         if was_player
             p.socket.emit('playerLeft', id) for p in _.values(@players)
             a.emit('playerLeft', id) for a in _.values(@anons)
-GlobalLobby = new GlobalLobbyGlobal()
 
-class UserProfilesGlobal
+class UserProfiles
     LEAGUES:
         'none': 'n'
         'bronze': 'b'
@@ -246,10 +243,16 @@ class UserProfilesGlobal
             league = @LEAGUES[league]
             cb(null, {region: region, name: name, league: league})
         )
-UserProfiles = new UserProfilesGlobal()
 
 class GameServer
+    constructor: ->
+        @io = null
+        @lobby_manager = new LobbyManager()
+        @profiles = new UserProfiles()
+        @global_lobbies = {}
+
     start: ->
+        setInterval(@lobby_manager.matchmake, 5000)
         @io = socketio.listen(5000)
         @io.set('log level', 2)
         @io.sockets.on('connection', (socket) =>
@@ -257,6 +260,52 @@ class GameServer
             fns = _.reject(fns, (fn) -> fn is 'start' or fn[0] is '_')
             socket.on(fn, this._event(this[fn], socket)) for fn in fns
         )
+        
+    joinGlobalLobby: (socket, player_info, cb) =>
+        if player_info is null
+            cb(this._globalLobby('AM').addAnon(socket))
+        else
+            @profiles.get(player_info.profile_url, (err, profile) =>
+                return if err
+                player_info = _.extend(player_info, profile)
+                player = new Player(socket, player_info)
+                cb(this._globalLobby(player.region).addPlayer(player))
+            )
+
+    getUserProfile: (socket, profile_url, cb) =>
+        @profiles.get(profile_url, cb)
+
+    createLobby: (socket, player_info, lobby_opts, cb) =>
+        @profiles.get(player_info.profile_url, (err, profile) =>
+            return if err
+            player_info = _.extend(player_info, profile)
+            player = new Player(socket, player_info, lobby_opts)
+            players = @lobby_manager.addPlayer(player)
+            this._globalLobby(player.region).removeByID(player.id)
+            cb(players)
+        )
+
+    sendChat: (socket, text) =>
+        sent = false
+        for gl in _.values(@global_lobbies)
+            if gl.isPresent(socket.id)
+                gl.sendChat(socket.id, text)
+                sent = true
+                break
+        if not sent
+            @lobby_manager.sendChat(socket.id, text)
+
+    exitLobby: (socket) =>
+        @lobby_manager.removePlayer(socket.id)
+
+    disconnect: (socket) =>
+        gl.removeByID(socket.id) for gl in _.values(@global_lobbies)
+        @lobby_manager.removePlayer(socket.id)
+
+    _globalLobby: (region) =>
+        if not @global_lobbies[region]
+            @global_lobbies[region] = new GlobalLobby()
+        return @global_lobbies[region]
 
     _event: (fn, socket) ->
         return ->
@@ -266,42 +315,5 @@ class GameServer
                 return fn.apply(this, args)
             catch err
                 logError(err)
-        
-    joinGlobalLobby: (socket, player_info, cb) =>
-        if player_info is null
-            cb(GlobalLobby.addAnon(socket))
-        else
-            UserProfiles.get(player_info.profile_url, (err, profile) ->
-                return if err
-                player_info = _.extend(player_info, profile)
-                player = new Player(socket, player_info)
-                cb(GlobalLobby.addPlayer(player))
-            )
-
-    getUserProfile: (socket, profile_url, cb) =>
-        UserProfiles.get(profile_url, cb)
-
-    createLobby: (socket, player_info, lobby_opts, cb) =>
-        UserProfiles.get(player_info.profile_url, (err, profile) ->
-            return if err
-            player_info = _.extend(player_info, profile)
-            player = new Player(socket, player_info, lobby_opts)
-            players = LobbyManager.addPlayer(player)
-            GlobalLobby.removeByID(player.id)
-            cb(players)
-        )
-
-    sendChat: (socket, text) =>
-        if GlobalLobby.isPresent(socket.id)
-            GlobalLobby.sendChat(socket.id, text)
-        else
-            LobbyManager.sendChat(socket.id, text)
-
-    exitLobby: (socket) =>
-        LobbyManager.removePlayer(socket.id)
-
-    disconnect: (socket) =>
-        GlobalLobby.removeByID(socket.id)
-        LobbyManager.removePlayer(socket.id)
 
 new GameServer().start() if require.main is module
