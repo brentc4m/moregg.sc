@@ -323,7 +323,7 @@ class GameServer
         @global_lobbies = {}
 
     start: ->
-        @io = socketio.listen(5000)
+        @io = socketio.listen(8080)
         @io.set('log level', 2)
         @io.sockets.on('connection', (socket) =>
             fns = _.functions(this)

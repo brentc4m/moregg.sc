@@ -33,7 +33,7 @@ class window.UserConfig
 class window.GameServer extends Events
     connect: ->
         this.trigger('connecting')
-        @socket = io.connect('http://localhost:5000')
+        @socket = io.connect('http://aeacus.moregg.sc:8080')
         @socket.on('connect', =>
             this.trigger('connect')
         )
