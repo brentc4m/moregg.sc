@@ -324,7 +324,8 @@ class GameServer
 
     start: ->
         @io = socketio.listen(8080)
-        @io.set('log level', 2)
+        @io.set('log level', 1)
+        @io.set('transports', ['websocket', 'flashsocket'])
         @io.sockets.on('connection', (socket) =>
             fns = _.functions(this)
             fns = _.reject(fns, (fn) -> fn is 'start' or fn[0] is '_')

@@ -13,12 +13,13 @@ configuration.preview_server_host = "0.0.0.0"
 #  Be sure to reference the engine by its extension AS A STRING.
 # `preview_engine_options` override `engine_options` when using the preview server.
 #
-configuration.engine_options['scss'] = {
+configuration.engine_options['sass'] = {
   :line_comments => false,
+  :debug_info => false,
   :style => :compact
 }
 
-configuration.preview_engine_options['scss'] = {
+configuration.preview_engine_options['sass'] = {
   :line_comments => true,
   :debug_info => true,
   :style => :nested
