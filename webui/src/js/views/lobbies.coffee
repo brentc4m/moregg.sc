@@ -172,7 +172,7 @@ class window.LobbyView extends View
         'click #exit-lobby-btn': 'exitLobby'
 
     initialize: =>
-        @in_game = false
+        @in_global = false
         @players = {}
         @last_chat_times = []
         @chat_blocked = false
@@ -203,27 +203,26 @@ class window.LobbyView extends View
         this.addMsg('Connecting to server..')
 
     lobbyJoined: (players) =>
-        @in_game = true
+        @in_global = false
         this._updatePlayers(players)
         this.addMsg('Private lobby joined')
-        this.addMsg('Searching for players..')
 
     globalLobbyJoined: (players) =>
-        @in_game = false
+        @in_global = true
         this._updatePlayers(players)
         this.addMsg('Global ' + @app.getRegion() + ' lobby joined')
 
     playerJoined: (player_info) =>
         @players[player_info.id] = player_info
         this.renderPlayers()
-        this.addMsg(this.playerLink(player_info.id) + ' has joined the lobby')
+        if not @in_global
+            this.addMsg(this.playerLink(player_info.id) + ' has joined the lobby')
 
     playerLeft: (id) =>
-        this.addMsg(this.playerLink(id) + ' has left the lobby')
+        if not @in_global
+            this.addMsg(this.playerLink(id) + ' has left the lobby')
         delete @players[id]
         this.renderPlayers()
-        if @in_game
-            this.addMsg('Searching for players..')
 
     chatReceived: (msg_info) =>
         text = $('<div/>').text(msg_info.text).html()
@@ -261,7 +260,7 @@ class window.LobbyView extends View
         this.$('.alert-message').remove()
         player = e.target.hash.slice(1)
         @app.addToBlocklist(player)
-        $(@el).prepend(this._render('alert-message', {type: 'success', msg: player + ' successfully blocked. You will no longer see games with this player.'}))
+        this.alert('success', player + ' successfully blocked. You will no longer see games with this player.')
 
     addMsg: (msg) =>
         timestamp = new Date().toString('HH:mm:ss')
@@ -303,3 +302,62 @@ class window.LobbyView extends View
             players[@app.getServer().getID()].this_player = true
         @players = players
         this.renderPlayers()
+
+class window.HostCustomView extends View
+    id: 'host-custom-view'
+
+    events:
+        'click #host-custom-btn': 'host'
+        'click #close-custom-btn': 'close'
+
+    render: =>
+        $(@el).html(this._render('host-custom'))
+
+    host: =>
+        name = this.$('#custom-name').val()
+        map = this.$('#custom-map').val()
+        max_players = parseInt(this.$('#custom-max-players').val())
+        if name.length is 0
+            return this.$('#custom-name-cg').addClass('error')
+        if map.length is 0
+            return this.$('#custom-map-cg').addClass('error')
+        if _.isNaN(max_players) or max_players < 2 or max_players > 16
+            return this.$('#custom-max-players-cg').addClass('error')
+        @app.hostCustom(name, map, max_players)
+
+    close: =>
+        @app.showLobby()
+
+class window.JoinCustomView extends View
+    id: 'join-custom-view'
+
+    events:
+        'click #refresh-customs-btn': 'refresh'
+        'click .join-custom': 'join'
+        'click #close-customs-btn': 'close'
+
+    initialize: =>
+        @lobbies = []
+        @app.getServer().bind('customLobbyList', this._customLobbyList)
+        @app.getServer().bind('joinCustomFailed', this._joinFailed)
+
+    render: =>
+        $(@el).html(this._render('join-custom', {lobbies: @lobbies}))
+
+    refresh: =>
+        @app.refreshCustomLobbies()
+
+    join: (e) =>
+        e.preventDefault()
+        id = e.target.hash.slice(1)
+        @app.joinCustom(id)
+
+    close: =>
+        @app.showLobby()
+
+    _joinFailed: (err) =>
+        this.alert('error', err)
+
+    _customLobbyList: (lobbies) =>
+        @lobbies = lobbies
+        this.render()

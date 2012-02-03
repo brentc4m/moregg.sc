@@ -55,6 +55,25 @@ h1, h2, h3 {
     cursor: default;
 }
 
+.table th, .table td {
+    border-top: 1px solid #232321;
+}
+
+.table tbody + tbody {
+    border-top: 2px solid #232321;
+}
+
+.table-bordered {
+    border: 1px solid #232321;
+}
+
+.table-bordered th + th,
+.table-bordered td + td,
+.table-bordered th + td,
+.table-bordered td + th {
+    border-left: 1px solid #232321;
+}
+
 #cgf-header {
     border-bottom: 1px solid #232321;
     margin-bottom: 15px;

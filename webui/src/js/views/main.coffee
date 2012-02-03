@@ -1,12 +1,17 @@
 class window.App
     constructor: ->
         @server = new GameServer()
+        @server.bind('connect', this._connected)
+        @server.bind('lobbyJoined', this._lobbyJoined)
+        @server.bind('globalLobbyJoined', this._lobbyJoined)
 
         @login_view = new LoginView(this)
         @user_settings_view = new UserSettingsView(this)
         @blocklist_view = new BlocklistView(this)
         @create_lobby_view = new CreateLobbyView(this)
         @lobby_view = new LobbyView(this)
+        @host_custom_view = new HostCustomView(this)
+        @join_custom_view = new JoinCustomView(this)
 
         @session = {}
         @config = null
@@ -15,7 +20,6 @@ class window.App
 
     start: =>
         @lobby_view.show()
-        @server.bind('connect', this._connected)
         @server.connect()
 
     isLoggedIn: =>
@@ -52,7 +56,6 @@ class window.App
 
     createLobby: =>
         @server.createLobby(this._getPlayerForServer(), this._getLobbyOpts())
-        @lobby_view.show()
 
     exitLobby: =>
         @server.exitLobby()
@@ -60,6 +63,22 @@ class window.App
 
     showBlocklist: =>
         @blocklist_view.show()
+
+    showJoinCustom: =>
+        @join_custom_view.refresh()
+        @join_custom_view.show()
+
+    showHostCustom: =>
+        @host_custom_view.show()
+
+    hostCustom: (name, map, max_players) =>
+        @server.hostCustom(this._getPlayerForServer(), name, map, max_players)
+
+    joinCustom: (id) =>
+        @server.joinCustom(id, this._getPlayerForServer())
+
+    refreshCustomLobbies: =>
+        @server.refreshCustoms(this._getPlayerForServer())
 
     getPlayer: =>
         player = _.clone(@session)
@@ -96,6 +115,9 @@ class window.App
         else
             @login_view.show()
             this._joinGlobalLobby()
+
+    _lobbyJoined: =>
+        @lobby_view.show()
 
     _initSession: (profile_url) =>
         localStorage['session.profile_url'] = profile_url
@@ -161,7 +183,9 @@ class window.UserSettingsView extends View
     container_id: 'cgf-sidebar'
 
     events:
-        'click #find-game-btn': 'findGame'
+        'click #find-1s-btn': 'findGame'
+        'click #show-join-custom-btn': 'showJoinCustom'
+        'click #show-host-custom-btn': 'showHostCustom'
         'click #exit-lobby-btn': 'exitLobby'
         'click #open-blocklist-btn': 'openBlocklist'
         'click #logout-btn': 'logout'
@@ -211,6 +235,12 @@ class window.UserSettingsView extends View
 
     openBlocklist: =>
         @app.showBlocklist()
+
+    showJoinCustom: =>
+        @app.showJoinCustom()
+
+    showHostCustom: =>
+        @app.showHostCustom()
 
 class window.BlocklistView extends View
     id: 'blocklist-view'

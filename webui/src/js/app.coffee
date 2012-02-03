@@ -72,6 +72,23 @@ class window.GameServer extends Events
     exitLobby: =>
         @socket.emit('exitLobby')
 
+    hostCustom: (player, name, map, max_players) =>
+        @socket.emit('hostCustom', player, name, map, max_players, (players) =>
+            this.trigger('lobbyJoined', players)
+        )
+
+    refreshCustoms: (player) =>
+        @socket.emit('refreshCustoms', player, (lobbies) =>
+            this.trigger('customLobbyList', lobbies)
+        )
+
+    joinCustom: (id, player) =>
+        @socket.emit('joinCustom', id, player, (err, players) =>
+            if err
+                return this.trigger('joinCustomFailed', err)
+            this.trigger('lobbyJoined', players)
+        )
+
     getID: =>
         return @socket.socket.sessionid
 
@@ -86,6 +103,10 @@ class window.View extends Backbone.View
         this.render()
         $('#' + @container_id + ' > *').detach()
         $('#' + @container_id).append(@el)
+
+    alert: (type, msg) =>
+        this.$('.alert').remove()
+        $(@el).prepend(this._render('alert', {type: type, msg: msg}))
 
     _getTemplate: _.memoize((id) ->
         return _.template($('#' + id + '-tmpl').html())

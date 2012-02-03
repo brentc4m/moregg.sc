@@ -47,7 +47,11 @@
       %button#exit-lobby-btn.btn.primary Exit lobby
     <% } else { %>
     %li
-      %button#find-game-btn.btn.primary Find game
+      %button#find-1s-btn.btn.primary Find 1v1
+    %li
+      %button#show-join-custom-btn.btn.primary Join Custom
+    %li
+      %button#show-host-custom-btn.btn.primary Host Custom
     %li
       %button#open-blocklist-btn.btn.primary(type="button") Edit blocklist
     <% } %>
@@ -163,8 +167,8 @@
 %script#form-error-tmpl(type="text/template")
   %span.help-inline <%= msg %>
 
-%script#alert-message-tmpl(type="text/template")
-  <div class="alert-message alert-<%= type %>">
+%script#alert-tmpl(type="text/template")
+  <div class="alert alert-<%= type %>">
   <%= msg %>
   </div>
 
@@ -185,3 +189,49 @@
         %input#blocklist-add-code.mini(type="text" maxlength=3)/
         %button#blocklist-add-btn.btn.primary(type="button") Add
   %button#blocklist-close-btn.btn.primary(type="button") Close blocklist
+
+%script#host-custom-tmpl(type="text/template")
+  %h2 Host Custom Game
+  %form.form-horizontal
+    %fieldset#custom-name-cg.control-group
+      %label.control-label Lobby name
+      .controls
+        %input#custom-name(type="text")/
+    %fieldset#custom-map-cg.control-group
+      %label.control-label Map
+      .controls
+        %input#custom-map(type="text")/
+    %fieldset#custom-max-players-cg.control-group
+      %label.control-label Max players
+      .controls
+        %input#custom-max-players(type="text")/
+    %fieldset.form-actions
+      %button#host-custom-btn.btn.primary(type="button") Host game
+      %button#close-custom-btn.btn.primary(type="button") Back
+
+%script#join-custom-tmpl(type="text/template")
+  %h2 Join Custom Game
+  %div
+    %button#refresh-customs-btn.btn.primary(type="button") Refresh
+    %button#close-customs-btn.btn.primary(type="button") Close
+  %p
+    <% if (lobbies.length > 0) { %>
+    %table.table.table-bordered
+      %thead
+        %tr
+          %th Name
+          %th Map
+          %th Players
+          %th Join
+      %tbody
+        <% for (var i=0; i<lobbies.length; i++) { %>
+        %tr
+          %td <%- lobbies[i].name %>
+          %td <%- lobbies[i].map %>
+          %td <%- lobbies[i].num_players + ' / ' + lobbies[i].max_players %>
+          %td
+            <a href="#<%= lobbies[i].id %>" class="join-custom">Join</a>
+        <% } %>
+    <% } else { %>
+    No games found.
+    <% } %>
