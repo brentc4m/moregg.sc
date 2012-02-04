@@ -182,6 +182,7 @@ class window.UserSettingsView extends View
     container_id: 'cgf-sidebar'
 
     events:
+        'click #show-lobby-btn': 'showLobby'
         'click #find-1s-btn': 'findGame'
         'click #show-join-custom-btn': 'showJoinCustom'
         'click #show-host-custom-btn': 'showHostCustom'
@@ -193,8 +194,8 @@ class window.UserSettingsView extends View
     initialize: =>
         @in_game = false
         server = @app.getServer()
-        server.bind('lobbyJoined', this.lobbyJoined)
-        server.bind('globalLobbyJoined', this.globalLobbyJoined)
+        server.bind('lobbyJoined', this._lobbyJoined)
+        server.bind('globalLobbyJoined', this._globalLobbyJoined)
 
     render: =>
         race_select = this._render('user-select',
@@ -217,14 +218,8 @@ class window.UserSettingsView extends View
         race = this.$('#race-select option:selected').val()
         @app.getConfig().set('race', race)
 
-    lobbyJoined: =>
-        @in_game = true
-        this.render()
-
-    globalLobbyJoined: =>
-        if @app.isLoggedIn()
-            @in_game = false
-            this.render()
+    showLobby: =>
+        @app.showLobby()
 
     findGame: =>
         @app.showCreateLobby()
@@ -240,6 +235,15 @@ class window.UserSettingsView extends View
 
     showHostCustom: =>
         @app.showHostCustom()
+
+    _lobbyJoined: =>
+        @in_game = true
+        this.render()
+
+    _globalLobbyJoined: =>
+        if @app.isLoggedIn()
+            @in_game = false
+            this.render()
 
 class window.BlocklistView extends View
     id: 'blocklist-view'
@@ -265,9 +269,9 @@ class window.BlocklistView extends View
         name = this.$('#blocklist-add-name').val()
         char_code = this.$('#blocklist-add-code').val()
         if name.length is 0
-            return this.error('add-name', 'Enter a name')
+            return this._error('add-name', 'Enter a name')
         if not char_code or char_code.length isnt 3 or /\D/.test(char_code)
-            return this.error('add-code', 'Code must be exactly 3 digits')
+            return this._error('add-code', 'Code must be exactly 3 digits')
         @app.addToBlocklist(name + '.' + char_code)
         this.render()
 
@@ -278,5 +282,5 @@ class window.BlocklistView extends View
             @app.removeFromBlocklist(users)
             this.render()
 
-    error: (field, msg) =>
+    _error: (field, msg) =>
         this.$('#blocklist-add-btn').after(this._render('form-error', {msg: msg}))

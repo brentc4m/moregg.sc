@@ -47,13 +47,15 @@
       %button#exit-lobby-btn.btn.primary Exit lobby
     <% } else { %>
     %li
+      %button#show-lobby-btn.btn.primary Show Lobby
+    %li
       %button#find-1s-btn.btn.primary Find 1v1
     %li
       %button#show-join-custom-btn.btn.primary Join Custom
     %li
       %button#show-host-custom-btn.btn.primary Host Custom
     %li
-      %button#open-blocklist-btn.btn.primary(type="button") Edit blocklist
+      %button#open-blocklist-btn.btn.primary(type="button") Edit Blocklist
     <% } %>
     %li
       %button#logout-btn.btn.primary Logout
@@ -131,7 +133,7 @@
     <%= fields %>
     %fieldset.form-actions
       %button#create-lobby-btn.btn.primary(type="button") Find game
-      %button#close-create-lobby-btn.btn.primary(type="button") Back to lobby
+      %button#close-create-lobby-btn.btn.primary(type="button") Close
 
 %script#lobby-tmpl(type="text/template")
   %h2 Lobby
@@ -181,14 +183,14 @@
           <% for (var i=0; i<blocklist.length; i++) { %>
           %option <%= blocklist[i] %>
           <% } %>
-        %button#blocklist-remove-btn.btn.primary(type="button") Remove selected
+        %button#blocklist-remove-btn.btn.primary(type="button") Remove Selected
       .span4
         %label Name
         %input#blocklist-add-name.medium(type="text")/
         %label Character code
         %input#blocklist-add-code.mini(type="text" maxlength=3)/
         %button#blocklist-add-btn.btn.primary(type="button") Add
-  %button#blocklist-close-btn.btn.primary(type="button") Close blocklist
+  %button#blocklist-close-btn.btn.primary(type="button") Close
 
 %script#host-custom-tmpl(type="text/template")
   %h2 Host Custom Game
@@ -206,8 +208,8 @@
       .controls
         %input#custom-max-players(type="text")/
     %fieldset.form-actions
-      %button#host-custom-btn.btn.primary(type="button") Host game
-      %button#close-custom-btn.btn.primary(type="button") Back
+      %button#host-custom-btn.btn.primary(type="button") Host Game
+      %button#close-custom-btn.btn.primary(type="button") Close
 
 %script#join-custom-tmpl(type="text/template")
   %h2 Join Custom Game

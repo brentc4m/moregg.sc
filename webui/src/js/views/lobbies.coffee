@@ -116,23 +116,6 @@ class window.CreateLobbyView extends View
     close: =>
         @app.showLobby()
 
-    validate: (vals, id) =>
-        if vals.length is 0
-            this.$('#' + id + '-cg').addClass('error')
-            return false
-        return true
-
-    validateOptions: =>
-        this.$('.control-group').removeClass('error')
-        this.$('.help-inline').remove()
-        config = @app.getConfig()
-        opts_valid = true
-        opts_valid &= this.validate(config.get('opp_races'), 'opp-races')
-        opts_valid &= this.validate(config.get('opp_leagues'), 'opp-leagues')
-        opts_valid &= this.validate(config.get('series'), 'series')
-        opts_valid &= this.validate(config.get('maps'), 'maps')
-        return opts_valid
-
     createLobby: =>
         @app.createLobby() if this.validateOptions()
 
@@ -162,6 +145,23 @@ class window.CreateLobbyView extends View
         $(e.target).parent('li').addClass('active')
         this.$('.tab-content div.active').removeClass('active')
         this.$(e.target.hash).addClass('active')
+
+    _validate: (vals, id) =>
+        if vals.length is 0
+            this.$('#' + id + '-cg').addClass('error')
+            return false
+        return true
+
+    _validateOptions: =>
+        this.$('.control-group').removeClass('error')
+        this.$('.help-inline').remove()
+        config = @app.getConfig()
+        opts_valid = true
+        opts_valid &= this._validate(config.get('opp_races'), 'opp-races')
+        opts_valid &= this._validate(config.get('opp_leagues'), 'opp-leagues')
+        opts_valid &= this._validate(config.get('series'), 'series')
+        opts_valid &= this._validate(config.get('maps'), 'maps')
+        return opts_valid
 
 class window.LobbyView extends View
     id: 'lobby-view'
@@ -294,7 +294,7 @@ class window.LobbyView extends View
                 return true
             else if now - @last_chat_times[0] < 2000
                 @chat_blocked = now + 5000
-                this.addMsg('You are spamming the chat. Wait 5 seconds.')
+                this._addMsg('You are spamming the chat. Wait 5 seconds.')
                 return false
             else
                 @last_chat_times.push(now)
