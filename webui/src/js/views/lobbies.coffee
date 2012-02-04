@@ -229,11 +229,13 @@ class window.LobbyView extends View
 
     _lobbyJoined: (players) =>
         @in_global = false
+        this._clearChat()
         this._updatePlayers(players)
-        this._addMsg('Private lobby joined')
+        this._addMsg('Game lobby joined')
 
     _globalLobbyJoined: (players) =>
         @in_global = true
+        this._clearChat()
         this._updatePlayers(players)
         this._addMsg('Global ' + @app.getRegion() + ' lobby joined')
 
@@ -308,6 +310,9 @@ class window.LobbyView extends View
             players[@app.getServer().getID()].this_player = true
         @players = players
         this._renderPlayers()
+
+    _clearChat: =>
+        this.$('#msg-list > *').remove()
 
 class window.HostCustomView extends View
     id: 'host-custom-view'
