@@ -3,16 +3,15 @@ sqlite3 = require('sqlite3').verbose()
 util = require('util')
 _ = require('underscore')
 
-NUM_CLIENTS = 500
 RACES = ['r', 't', 'z', 'p']
 
-runClient = ->
+runClient = (id) ->
     options = {}
     options['force new connection'] = true
     socket = io.connect('http://aeacus.moregg.sc:8080', options)
     data =
         s: socket
-        id: Math.floor(Math.random()*NUM_CLIENTS)
+        id: id
         race: RACES[Math.floor(Math.random()*RACES.length)]
     socket.on('connect', createProfile(data))
 
@@ -38,17 +37,17 @@ profileReady = (data) ->
     )
 
 createLobby = (data) ->
-    request =
+    player =
         char_code: '123'
         profile_url: data.id
         race: data.race
-        params:
-            opp_races: RACES
-            opp_leagues: [data.league]
-            maps: ['blz_ap', 'blz_as', 'blz_ev', 'blz_me', 'blz_sp', 'blz_tdale', 'blz_st', 'blz_xnc']
-            series: ['bo1']
-            blocked_users: {}
-    data.s.emit('createLobby', request, (players) ->
+    lobby_opts =
+        opp_races: RACES
+        opp_leagues: ['n', 'b', 's', 'g', 'p', 'd', 'm', 'gm']
+        maps: ['blz_ap', 'blz_as', 'blz_ev', 'blz_me', 'blz_sp', 'blz_tdale', 'blz_st', 'blz_xnc']
+        series: ['bo1']
+        blocked_users: {}
+    data.s.emit('createLobby', player, lobby_opts, (players) ->
         lobbyCreated(data)
     )
 
@@ -73,4 +72,5 @@ sendChat = (data, idx, max) ->
         data.s.emit('exitLobby')
         profileReady(data)
 
-setInterval(runClient, 500)
+for id in [0..10]
+    setTimeout(runClient, 500*id, id)

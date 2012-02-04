@@ -192,7 +192,9 @@ class OVOLobbyManager
         @pending_players = new_pending
 
     sendChat: (player_id, text) =>
-        @lobbies_by_player_id[player_id].sendChat(player_id, text)
+        # players by themselves have no lobby
+        if player_id of @lobbies_by_player_id
+            @lobbies_by_player_id[player_id].sendChat(player_id, text)
 
 class GlobalLobbyManager
     constructor: ->
