@@ -58,7 +58,6 @@ class window.App
         @server.createLobby(this._getPlayerForServer(), this._getLobbyOpts())
 
     exitLobby: =>
-        @server.exitLobby()
         this._joinGlobalLobby()
 
     showBlocklist: =>

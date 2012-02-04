@@ -105,9 +105,6 @@ class CustomLobby
         for p in _.values(@players)
             continue if p.id is id
             p.socket.emit('chatReceived', {id: id, text: text})
-
-    isCustom: =>
-        return true
     
     numPlayers: =>
         return _.keys(@players).length
@@ -119,82 +116,85 @@ class CustomLobby
         num_players: this.numPlayers()
         max_players: @max_players
 
-class LobbyManager
+class CustomLobbyManager
     constructor: ->
-        @pending_players = []
-        @lobbies_by_id = {}
         @custom_lobbies = {}
         @custom_order = []
+        @lobbies_by_player_id = {}
 
-    isPresent: (id) =>
-        return id of @lobbies_by_id or id in (p.id for p in @pending_players)
+    createLobby: (name, map, max_players) =>
+        lobby = new CustomLobby(name, map, max_players)
+        @custom_lobbies[lobby.id] = lobby
+        @custom_order.unshift(lobby.id)
+        return lobby.id
+
+    addPlayer: (player, lobby_id) =>
+        lobby = @custom_lobbies[lobby_id]
+        return false if lobby.isFull()
+        players = lobby.addPlayer(player)
+        @lobbies_by_player_id[player.id] = lobby
+        if lobby.isFull()
+            @custom_order = _.without(@custom_order, lobby.id)
+        return players
+
+    removePlayer: (player_id) =>
+        lobby = @lobbies_by_player_id[player_id]
+        if lobby.isFull()
+            @custom_order.unshift(lobby.id)
+        lobby.removePlayer(player_id)
+        if lobby.numPlayers() is 0
+            delete @custom_lobbies[lobby.id]
+            @custom_order = _.without(@custom_order, lobby.id)
+
+    getLobbies: =>
+        return _.map(@custom_order, (id) => return @custom_lobbies[id])
+
+    sendChat: (player_id, text) =>
+        @lobbies_by_player_id[player_id].sendChat(player_id, text)
+
+class OVOLobbyManager
+    constructor: ->
+        @pending_players = []
+        @lobbies_by_player_id = {}
 
     addPlayer: (player) =>
-        return if this.isPresent(player.id)
         @pending_players.push(player)
         players = {}
         players[player.id] = player
         return players
 
-    removePlayer: (id) =>
-        if id of @lobbies_by_id
-            lobby = @lobbies_by_id[id]
-            if lobby.isCustom()
-                if lobby.isFull()
-                    @custom_order.unshift(lobby.id)
-                lobby.removePlayer(id)
-                if lobby.numPlayers() is 0
-                    delete @custom_lobbies[lobby.id]
-                    @custom_order = _.without(@custom_order, lobby.id)
-            else
-                other_player = lobby.removePlayer(id)
-                @pending_players.push(other_player)
-                delete @lobbies_by_id[other_player.id]
-            delete @lobbies_by_id[id]
+    removePlayer: (player_id) =>
+        if player_id of @lobbies_by_player_id
+            lobby = @lobbies_by_player_id[player_id]
+            other_player = lobby.removePlayer(player_id)
+            @pending_players.push(other_player)
+            delete @lobbies_by_player_id[other_player.id]
+            delete @lobbies_by_player_id[player_id]
         else
-            @pending_players = _.reject(@pending_players, (p) -> p.id is id)
-
-    addCustom: (name, map, max_players) =>
-        lobby = new CustomLobby(name, map, max_players)
-        @custom_lobbies[lobby.id] = lobby
-        @custom_order.unshift(lobby.id)
-        return lobby.id
-    
-    joinCustom: (id, player) =>
-        return if this.isPresent(player.id) or not (id of @custom_lobbies)
-        lobby = @custom_lobbies[id]
-        return false if lobby.isFull()
-        players = lobby.addPlayer(player)
-        @lobbies_by_id[player.id] = lobby
-        if lobby.isFull()
-            @custom_order = _.without(@custom_order, lobby.id)
-        return players
-
-    getCustoms: =>
-        return _.map(@custom_order, (id) => return @custom_lobbies[id])
+            @pending_players = _.reject(@pending_players,
+                (p) -> p.id is player_id)
 
     matchmake: =>
         new_pending = []
         while @pending_players.length > 0
             player = @pending_players.shift()
-            continue if player.id of @lobbies_by_id
+            continue if player.id of @lobbies_by_player_id
             matched = false
             for other_player in @pending_players
                 match = player.matches(other_player)
                 if match
                     lobby = new Lobby(player, other_player, match)
-                    @lobbies_by_id[player.id] = lobby
-                    @lobbies_by_id[other_player.id] = lobby
+                    @lobbies_by_player_id[player.id] = lobby
+                    @lobbies_by_player_id[other_player.id] = lobby
                     matched = true
                     break
             new_pending.push(player) if not matched
         @pending_players = new_pending
 
-    sendChat: (id, text) =>
-        return unless id of @lobbies_by_id
-        @lobbies_by_id[id].sendChat(id, text)
+    sendChat: (player_id, text) =>
+        @lobbies_by_player_id[player_id].sendChat(player_id, text)
 
-class GlobalLobby
+class GlobalLobbyManager
     constructor: ->
         @players = {}
         @anons = {}
@@ -210,16 +210,13 @@ class GlobalLobby
         @anons[socket.id] = socket
         return @players
     
-    isPresent: (player_id) =>
-        return player_id of @players
-    
-    sendChat: (id, text) =>
-        return if id not of @players
-        chat = {id: id, text: text}
-        p.socket.emit('chatReceived', chat) for p in _.values(@players) when p.id isnt id
+    sendChat: (player_id, text) =>
+        chat = {id: player_id, text: text}
+        for p in _.values(@players) when p.id isnt player_id
+            p.socket.emit('chatReceived', chat)
         a.emit('chatReceived', chat) for a in _.values(@anons)
 
-    removeByID: (id) =>
+    removePlayer: (id) =>
         was_player = id of @players
         delete @players[id]
         delete @anons[id]
@@ -319,8 +316,10 @@ class GameServer
     constructor: ->
         @io = null
         @profiles = new UserProfiles()
-        @lobby_managers = {}
-        @global_lobbies = {}
+        @custom_managers = {}
+        @ovo_managers = {}
+        @global_managers = {}
+        @managers_by_id = {}
 
     start: ->
         @io = socketio.listen(8080)
@@ -333,13 +332,18 @@ class GameServer
         
     joinGlobalLobby: (socket, player_info, cb) =>
         if player_info is null
-            cb(this._globalLobby('AM').addAnon(socket))
+            manager = this._globalManager('AM')
+            @managers_by_id[socket.id] = manager
+            cb(manager.addAnon(socket))
         else
             @profiles.get(player_info.profile_url, (err, profile) =>
                 return if err
                 player_info = _.extend(player_info, profile)
                 player = new Player(socket, player_info)
-                cb(this._globalLobby(player.region).addPlayer(player))
+                this._removePlayer(player.id)
+                manager = this._globalManager(player.region)
+                @managers_by_id[player.id] = manager
+                cb(manager.addPlayer(player))
             )
 
     getUserProfile: (socket, profile_url, cb) =>
@@ -350,38 +354,31 @@ class GameServer
             return if err
             player_info = _.extend(player_info, profile)
             player = new Player(socket, player_info, lobby_opts)
-            players = this._lobbyManager(player.region).addPlayer(player)
-            this._globalLobby(player.region).removeByID(player.id)
-            cb(players)
+            this._removePlayer(player.id)
+            manager = this._ovoManager(player.region)
+            @managers_by_id[player.id] = manager
+            cb(manager.addPlayer(player))
         )
 
     sendChat: (socket, text) =>
-        sent = false
-        for gl in _.values(@global_lobbies)
-            if gl.isPresent(socket.id)
-                gl.sendChat(socket.id, text)
-                sent = true
-                break
-        if not sent
-            l.sendChat(socket.id, text) for l in _.values(@lobby_managers)
+        @managers_by_id[socket.id].sendChat(socket.id, text)
 
     hostCustom: (socket, player_info, name, map, max_players, cb) =>
         @profiles.get(player_info.profile_url, (err, profile) =>
             return if err
-            manager = this._lobbyManager(profile.region)
-            lobby_id = manager.addCustom(name, map, max_players)
             _.extend(player_info, profile)
             player = new Player(socket, player_info)
-            players = manager.joinCustom(lobby_id, player)
-            this._globalLobby(player.region).removeByID(player.id)
-            cb(players)
+            manager = this._customManager(player.region)
+            lobby_id = manager.createLobby(name, map, max_players)
+            this._removePlayer(player.id)
+            @managers_by_id[player.id] = manager
+            cb(manager.addPlayer(player, lobby_id))
         )
 
     refreshCustoms: (socket, player_info, cb) =>
         @profiles.get(player_info.profile_url, (err, profile) =>
             return if err
-            lobbies = this._lobbyManager(profile.region).getCustoms()
-            cb(lobbies)
+            cb(this._customManager(profile.region).getLobbies())
         )
 
     joinCustom: (socket, lobby_id, player_info, cb) =>
@@ -389,32 +386,38 @@ class GameServer
             return if err
             player_info = _.extend(player_info, profile)
             player = new Player(socket, player_info)
-            manager = this._lobbyManager(profile.region)
-            players = manager.joinCustom(lobby_id, player)
+            this._removePlayer(player.id)
+            manager = this._customManager(player.region)
+            players = manager.addPlayer(player, lobby_id)
             if not players
                 cb('Custom game is full, try another.')
             else
-                this._globalLobby(player.region).removeByID(player.id)
+                @managers_by_id[player.id] = manager
                 cb(null, players)
         )
 
-    exitLobby: (socket) =>
-        l.removePlayer(socket.id) for l in _.values(@lobby_managers)
-
     disconnect: (socket) =>
-        gl.removeByID(socket.id) for gl in _.values(@global_lobbies)
-        l.removePlayer(socket.id) for l in _.values(@lobby_managers)
+        this._removePlayer(socket.id)
 
-    _globalLobby: (region) =>
-        if not @global_lobbies[region]
-            @global_lobbies[region] = new GlobalLobby()
-        return @global_lobbies[region]
+    _removePlayer: (id) =>
+        if id of @managers_by_id
+            @managers_by_id[id].removePlayer(id)
+
+    _globalManager: (region) =>
+        if not @global_managers[region]
+            @global_managers[region] = new GlobalLobbyManager()
+        return @global_managers[region]
     
-    _lobbyManager: (region) =>
-        if not @lobby_managers[region]
-            @lobby_managers[region] = new LobbyManager()
-            setInterval(@lobby_managers[region].matchmake, 5000)
-        return @lobby_managers[region]
+    _ovoManager: (region) =>
+        if not @ovo_managers[region]
+            @ovo_managers[region] = new OVOLobbyManager()
+            setInterval(@ovo_managers[region].matchmake, 5000)
+        return @ovo_managers[region]
+
+    _customManager: (region) =>
+        if not @custom_managers[region]
+            @custom_managers[region] = new CustomLobbyManager()
+        return @custom_managers[region]
 
     _event: (fn, socket) ->
         return ->

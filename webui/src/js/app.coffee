@@ -74,9 +74,6 @@ class window.GameServer extends Events
     sendChat: (msg) =>
         @socket.emit('sendChat', msg)
 
-    exitLobby: =>
-        @socket.emit('exitLobby')
-
     hostCustom: (player, name, map, max_players) =>
         @socket.emit('hostCustom', player, name, map, max_players, (players) =>
             this.trigger('lobbyJoined', players)
