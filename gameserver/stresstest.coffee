@@ -1,6 +1,7 @@
 io = require('socket.io-client')
 sqlite3 = require('sqlite3').verbose()
 util = require('util')
+_ = require('underscore')
 
 NUM_CLIENTS = 500
 RACES = ['r', 't', 'z', 'p']
