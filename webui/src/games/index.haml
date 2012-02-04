@@ -162,7 +162,7 @@
 %script#chat-msg-tmpl(type="text/template")
   .msg
     %span.light <%= timestamp %>
-    <%= msg %>
+    <%= raw_prefix %><%- msg %>
 
 %script#form-error-tmpl(type="text/template")
   %span.help-inline <%= msg %>

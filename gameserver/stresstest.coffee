@@ -6,6 +6,7 @@ _ = require('underscore')
 RACES = ['r', 't', 'z', 'p']
 
 runClient = (id) ->
+    console.log(id)
     options = {}
     options['force new connection'] = true
     socket = io.connect('http://aeacus.moregg.sc:8080', options)
@@ -72,5 +73,5 @@ sendChat = (data, idx, max) ->
         data.s.emit('exitLobby')
         profileReady(data)
 
-for id in [0..10]
-    setTimeout(runClient, 500*id, id)
+for id in [0..100]
+    setTimeout(runClient, 250*id, id)

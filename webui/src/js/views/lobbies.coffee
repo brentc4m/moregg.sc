@@ -177,66 +177,21 @@ class window.LobbyView extends View
         @last_chat_times = []
         @chat_blocked = false
         $(@el).html(this._render('lobby'))
-        this.renderPlayers()
+        this._renderPlayers()
 
         server = @app.getServer()
-        server.bind('connecting', this.connecting)
-        server.bind('lobbyJoined', this.lobbyJoined)
-        server.bind('globalLobbyJoined', this.globalLobbyJoined)
-        server.bind('playerJoined', this.playerJoined)
-        server.bind('playerLeft', this.playerLeft)
-        server.bind('chatReceived', this.chatReceived)
-        server.bind('lobbyFinished', this.lobbyFinished)
-
-    renderPlayers: =>
-        this.$('#user-list').html(this._render('lobby-players',
-            players: _.values(@players)
-            player_link: (player_info) =>
-                return this._render('player-link', player_info)
-        ))
+        server.bind('connecting', this._connecting)
+        server.bind('lobbyJoined', this._lobbyJoined)
+        server.bind('globalLobbyJoined', this._globalLobbyJoined)
+        server.bind('playerJoined', this._playerJoined)
+        server.bind('playerLeft', this._playerLeft)
+        server.bind('chatReceived', this._chatReceived)
+        server.bind('lobbyFinished', this._lobbyFinished)
+        server.bind('lobbyMessages', this._lobbyMessages)
 
     show: =>
         super()
         this.$('#msg-box').focus()
-
-    connecting: =>
-        this.addMsg('Connecting to server..')
-
-    lobbyJoined: (players) =>
-        @in_global = false
-        this._updatePlayers(players)
-        this.addMsg('Private lobby joined')
-
-    globalLobbyJoined: (players) =>
-        @in_global = true
-        this._updatePlayers(players)
-        this.addMsg('Global ' + @app.getRegion() + ' lobby joined')
-
-    playerJoined: (player_info) =>
-        @players[player_info.id] = player_info
-        this.renderPlayers()
-        if not @in_global
-            this.addMsg(this.playerLink(player_info.id) + ' has joined the lobby')
-
-    playerLeft: (id) =>
-        if not @in_global
-            this.addMsg(this.playerLink(id) + ' has left the lobby')
-        delete @players[id]
-        this.renderPlayers()
-
-    chatReceived: (msg_info) =>
-        text = $('<div/>').text(msg_info.text).html()
-        this.addMsg(this.playerLink(msg_info.id) + ': ' + text)
-
-    lobbyFinished: (game_info) =>
-        series = _.filter(SERIES_OPTS, (s) -> s.val in game_info.series)
-        series = _.pluck(series, 'label')
-        series = series.join(', ')
-        maps = (MAP_LABELS[m] for m in game_info.maps).join(', ')
-        this.addMsg('Lobby complete!')
-        this.addMsg('Series type: ' + series)
-        this.addMsg('Maps: ' + maps)
-        this.addMsg('First map: ' + MAP_LABELS[game_info.random_map])
 
     exitLobby: =>
         @app.exitLobby()
@@ -247,9 +202,9 @@ class window.LobbyView extends View
         return if not msg
         msg_box.val('')
         if not @app.isLoggedIn()
-            this.addMsg('You are not logged in. Login to chat!')
-        else if this.rateOk()
-            this.chatReceived({id: @app.getServer().getID(), text: msg})
+            this._addMsg('You are not logged in. Login to chat!')
+        else if this._rateOk()
+            this._chatReceived({id: @app.getServer().getID(), text: msg})
             @app.getServer().sendChat(msg)
 
     sendChatOnEnter: (e) =>
@@ -262,16 +217,67 @@ class window.LobbyView extends View
         @app.addToBlocklist(player)
         this.alert('success', player + ' successfully blocked. You will no longer see games with this player.')
 
-    addMsg: (msg) =>
+    _renderPlayers: =>
+        this.$('#user-list').html(this._render('lobby-players',
+            players: _.values(@players)
+            player_link: (player_info) =>
+                return this._render('player-link', player_info)
+        ))
+
+    _connecting: =>
+        this._addMsg('Connecting to server..')
+
+    _lobbyJoined: (players) =>
+        @in_global = false
+        this._updatePlayers(players)
+        this._addMsg('Private lobby joined')
+
+    _globalLobbyJoined: (players) =>
+        @in_global = true
+        this._updatePlayers(players)
+        this._addMsg('Global ' + @app.getRegion() + ' lobby joined')
+
+    _playerJoined: (player_info) =>
+        @players[player_info.id] = player_info
+        this._renderPlayers()
+        if not @in_global
+            this._addMsg(' has joined the lobby', this._playerLink(player_info.id))
+
+    _playerLeft: (id) =>
+        if not @in_global
+            this._addMsg(' has left the lobby', this._playerLink(id))
+        delete @players[id]
+        this._renderPlayers()
+
+    _chatReceived: (msg_info) =>
+        this._addMsg(': ' + msg_info.text, this._playerLink(msg_info.id))
+
+    _lobbyMessages: (msgs) =>
+        this._addMsg(msg) for msg in msgs
+
+    _lobbyFinished: (game_info) =>
+        series = _.filter(SERIES_OPTS, (s) -> s.val in game_info.series)
+        series = _.pluck(series, 'label')
+        series = series.join(', ')
+        maps = (MAP_LABELS[m] for m in game_info.maps).join(', ')
+        this._addMsg('Lobby complete!')
+        this._addMsg('Series type: ' + series)
+        this._addMsg('Maps: ' + maps)
+        this._addMsg('First map: ' + MAP_LABELS[game_info.random_map])
+
+    _addMsg: (msg, raw_prefix) =>
+        if not raw_prefix?
+            raw_prefix = ''
         timestamp = new Date().toString('HH:mm:ss')
         this.$('#msg-list').append(this._render('chat-msg',
             timestamp: timestamp
+            raw_prefix: raw_prefix
             msg: msg
         ))
         box = this.$('#chat-box')
         box.scrollTop(box[0].scrollHeight)
 
-    rateOk: =>
+    _rateOk: =>
         now = new Date().getTime()
         if @chat_blocked
             if now > @chat_blocked
@@ -293,7 +299,7 @@ class window.LobbyView extends View
                 @last_chat_times.shift()
                 return true
 
-    playerLink: (id) =>
+    _playerLink: (id) =>
         player_info = @players[id]
         return this._render('player-link', {player: player_info})
     
@@ -301,7 +307,7 @@ class window.LobbyView extends View
         if @app.isLoggedIn()
             players[@app.getServer().getID()].this_player = true
         @players = players
-        this.renderPlayers()
+        this._renderPlayers()
 
 class window.HostCustomView extends View
     id: 'host-custom-view'

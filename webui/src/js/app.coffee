@@ -42,8 +42,11 @@ class window.GameServer extends Events
         @socket.on('connect', =>
             this.trigger('connect')
         )
-        @socket.on('lobbyJoined', (global, players) =>
-            this.trigger('lobbyJoined', global, players)
+        @socket.on('lobbyJoined', (players) =>
+            this.trigger('lobbyJoined', players)
+        )
+        @socket.on('globalLobbyJoined', (players) =>
+            this.trigger('globalLobbyJoined', players)
         )
         @socket.on('playerJoined', (player_info) =>
             this.trigger('playerJoined', player_info)
@@ -57,27 +60,27 @@ class window.GameServer extends Events
         @socket.on('lobbyFinished', (game_info) =>
             this.trigger('lobbyFinished', game_info)
         )
+        @socket.on('joinCustomFailed', (msg) =>
+            this.trigger('joinCustomFailed', msg)
+        )
+        @socket.on('lobbyMessages', (msgs) =>
+            this.trigger('lobbyMessages', msgs)
+        )
 
     getUserProfile: (profile_url, cb) =>
         @socket.emit('getUserProfile', profile_url, cb)
 
     joinGlobalLobby: (player) =>
-        @socket.emit('joinGlobalLobby', player, (players) =>
-            this.trigger('globalLobbyJoined', players)
-        )
+        @socket.emit('joinGlobalLobby', player)
 
     createLobby: (player, lobby_opts) =>
-        @socket.emit('createLobby', player, lobby_opts, (players) =>
-            this.trigger('lobbyJoined', players)
-        )
+        @socket.emit('createLobby', player, lobby_opts)
 
     sendChat: (msg) =>
         @socket.emit('sendChat', msg)
 
     hostCustom: (player, name, map, max_players) =>
-        @socket.emit('hostCustom', player, name, map, max_players, (players) =>
-            this.trigger('lobbyJoined', players)
-        )
+        @socket.emit('hostCustom', player, name, map, max_players)
 
     refreshCustoms: (player) =>
         @socket.emit('refreshCustoms', player, (lobbies) =>
@@ -85,11 +88,7 @@ class window.GameServer extends Events
         )
 
     joinCustom: (id, player) =>
-        @socket.emit('joinCustom', id, player, (err, players) =>
-            if err
-                return this.trigger('joinCustomFailed', err)
-            this.trigger('lobbyJoined', players)
-        )
+        @socket.emit('joinCustom', id, player)
 
     getID: =>
         return @socket.socket.sessionid
