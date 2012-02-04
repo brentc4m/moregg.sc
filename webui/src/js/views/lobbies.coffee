@@ -117,7 +117,7 @@ class window.CreateLobbyView extends View
         @app.showLobby()
 
     createLobby: =>
-        @app.createLobby() if this.validateOptions()
+        @app.createLobby() if this._validateOptions()
 
     changeOppRaces: =>
         checked = this.$('input[name="opp-races"]:checked')

@@ -31,15 +31,15 @@ h1, h2, h3 {
     padding: 10px;
 }
 
-.tabs {
+.nav-tabs {
     border-bottom: 1px solid #232321;
 }
 
-.tabs > li {
+.nav-tabs > li {
     margin-bottom: -1px;
 }
 
-.tabs > li > a {
+.nav-tabs > li > a {
     padding-top: 9px;
     padding-bottom: 9px;
     border: 1px solid transparent;
@@ -48,14 +48,14 @@ h1, h2, h3 {
     border-radius: 4px 4px 0 0;
 }
 
-.tabs > li > a:hover {
+.nav-tabs > li > a:hover {
     color: #f8f3e5;
     background: url(../img/panel_bg.png);
     border: 1px solid #232321;
     border-bottom-color: transparent;
 }
 
-.tabs > .active > a, .tabs > .active > a:hover {
+.nav-tabs > .active > a, .nav-tabs > .active > a:hover {
     color: #f8f3e5;
     background: url(../img/panel_bg.png);
     border: 1px solid #232321;
