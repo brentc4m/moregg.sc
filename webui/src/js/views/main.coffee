@@ -152,6 +152,13 @@ class window.LoginView extends View
 
     render: =>
         $(@el).html(this._render('login-form', races: RACE_OPTS))
+        title = 'Where do I find these?'
+        content = this._render('login-popover')
+        this.$('#login-popover').popover(
+            placement: 'left'
+            title: title
+            content: content
+        )
 
     login: =>
         this.$('input').removeClass('error')

@@ -44,21 +44,21 @@
       <%= race_select %>
     <% if (in_game) { %>
     %li
-      %button#exit-lobby-btn.btn.primary Exit lobby
+      %button#exit-lobby-btn.btn.btn-primary Exit lobby
     <% } else { %>
     %li
-      %button#show-lobby-btn.btn.primary Show Lobby
+      %button#show-lobby-btn.btn.btn-primary Show Lobby
     %li
-      %button#find-1s-btn.btn.primary Find 1v1
+      %button#find-1s-btn.btn.btn-primary Find 1v1
     %li
-      %button#show-join-custom-btn.btn.primary Join Custom
+      %button#show-join-custom-btn.btn.btn-primary Join Custom
     %li
-      %button#show-host-custom-btn.btn.primary Host Custom
+      %button#show-host-custom-btn.btn.btn-primary Host Custom
     %li
-      %button#open-blocklist-btn.btn.primary(type="button") Edit Blocklist
+      %button#open-blocklist-btn.btn.btn-primary(type="button") Edit Blocklist
     <% } %>
     %li
-      %button#logout-btn.btn.primary Logout
+      %button#logout-btn.btn.btn-primary Logout
 
 %script#login-form-tmpl(type="text/template")
   %h3 Login
@@ -72,7 +72,22 @@
       <% for (var i=0; i<races.length; i++) { %>
       <option value="<%= races[i].val %>"><%= races[i].label %></option>
       <% } %>
-    %button#login-btn.btn.primary(type="button") Login
+    %p 
+      %a#login-popover Where do I find these?
+    %button#login-btn.btn.btn-primary(type="button") Login
+
+%script#login-popover-tmpl(type="text/template")
+  %p
+    Visit <a href="http://battle.net">battle.net</a> and login. Click the large
+    Starcraft 2 image. In the upper right you should see your SC2 nickname.
+    Click it, then click <strong>Profile</strong>. This is your profile page.
+    Copy the URL from the location bar in your browser and paste it into the
+    Profile URL box.
+  %br/
+  %p
+    You can find your character code in-game. Open the Starcraft 2 client and
+    login. Open your friends list and click <strong>Add Friend</strong>. You
+    should see your 3 digit character code in the window that comes up.
 
 %script#login-msg-tmpl(type="text/template")
   #login-msg <%= msg %>
@@ -132,8 +147,8 @@
   %form.form-horizontal
     <%= fields %>
     %fieldset.form-actions
-      %button#create-lobby-btn.btn.primary(type="button") Find game
-      %button#close-create-lobby-btn.btn.primary(type="button") Close
+      %button#create-lobby-btn.btn.btn-primary(type="button") Find game
+      %button#close-create-lobby-btn.btn.btn-primary(type="button") Close
 
 %script#lobby-tmpl(type="text/template")
   %h2 Lobby
@@ -183,14 +198,14 @@
           <% for (var i=0; i<blocklist.length; i++) { %>
           %option <%= blocklist[i] %>
           <% } %>
-        %button#blocklist-remove-btn.btn.primary(type="button") Remove Selected
+        %button#blocklist-remove-btn.btn.btn-primary(type="button") Remove Selected
       .span4
         %label Name
         %input#blocklist-add-name.medium(type="text")/
         %label Character code
         %input#blocklist-add-code.mini(type="text" maxlength=3)/
-        %button#blocklist-add-btn.btn.primary(type="button") Add
-  %button#blocklist-close-btn.btn.primary(type="button") Close
+        %button#blocklist-add-btn.btn.btn-primary(type="button") Add
+  %button#blocklist-close-btn.btn.btn-primary(type="button") Close
 
 %script#host-custom-tmpl(type="text/template")
   %h2 Host Custom Game
@@ -208,14 +223,14 @@
       .controls
         %input#custom-max-players(type="text")/
     %fieldset.form-actions
-      %button#host-custom-btn.btn.primary(type="button") Host Game
-      %button#close-custom-btn.btn.primary(type="button") Close
+      %button#host-custom-btn.btn.btn-primary(type="button") Host Game
+      %button#close-custom-btn.btn.btn-primary(type="button") Close
 
 %script#join-custom-tmpl(type="text/template")
   %h2 Join Custom Game
   %div
-    %button#refresh-customs-btn.btn.primary(type="button") Refresh
-    %button#close-customs-btn.btn.primary(type="button") Close
+    %button#refresh-customs-btn.btn.btn-primary(type="button") Refresh
+    %button#close-customs-btn.btn.btn-primary(type="button") Close
   %p
     <% if (lobbies.length > 0) { %>
     %table.table.table-bordered
