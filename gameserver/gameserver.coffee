@@ -375,7 +375,7 @@ class GameServer
         @managers_by_id = {}
 
     start: ->
-        @io = socketio.listen(8080)
+        @io = socketio.listen(443)
         @io.set('log level', 1)
         @io.sockets.on('connection', (socket) =>
             fns = _.functions(this)

@@ -35,7 +35,7 @@ class window.GameServer extends Events
         if 'gameserver.url' of localStorage
             address = localStorage['gameserver.url']
         else
-            address = 'http://aeacus.moregg.sc:8080'
+            address = 'http://aeacus.moregg.sc:443'
         window.WEB_SOCKET_SWF_LOCATION = '/swf/WebSocketMainInsecure.swf'
         this.trigger('connecting')
         @socket = io.connect(address)
