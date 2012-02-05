@@ -176,6 +176,7 @@ class CustomLobbyManager
         if lobby.isFull()
             @custom_order.unshift(lobby.id)
         lobby.removePlayer(player_id)
+        delete @lobbies_by_player_id[player_id]
         if lobby.numPlayers() is 0
             delete @custom_lobbies[lobby.id]
             @custom_order = _.without(@custom_order, lobby.id)
@@ -185,6 +186,12 @@ class CustomLobbyManager
 
     sendChat: (player_id, text) =>
         @lobbies_by_player_id[player_id].sendChat(player_id, text)
+
+    numPlayers: =>
+        return _.keys(@lobbies_by_player_id).length
+
+    numQueued: =>
+        return this.numPlayers()
 
 class OVOLobbyManager
     constructor: ->
@@ -232,6 +239,12 @@ class OVOLobbyManager
         if player_id of @lobbies_by_player_id
             @lobbies_by_player_id[player_id].sendChat(player_id, text)
 
+    numPlayers: =>
+        return _.keys(@lobbies_by_player_id).length + this.numQueued()
+
+    numQueued: =>
+        return @pending_players.length
+
 class GlobalLobbyManager
     constructor: ->
         @players = {}
@@ -260,6 +273,9 @@ class GlobalLobbyManager
         if was_player
             p.playerLeft(id) for p in _.values(@players)
             a.emit('playerLeft', id) for a in _.values(@anons)
+
+    numPlayers: =>
+        return _.keys(@players).length
 
 class UserProfiles
     LEAGUES:
@@ -430,6 +446,17 @@ class GameServer
                 this._removePlayer(player.id)
                 manager.addPlayer(player, lobby_id)
                 @managers_by_id[player.id] = manager
+        )
+
+    getUserStats: (socket, region) =>
+        num_players = this._globalManager(region).numPlayers()
+        num_players += this._ovoManager(region).numPlayers()
+        num_players += this._customManager(region).numPlayers()
+        num_queued = this._ovoManager(region).numQueued()
+        num_queued += this._customManager(region).numQueued()
+        socket.emit('userStats',
+            num_players: num_players
+            num_queued: num_queued
         )
 
     disconnect: (socket) =>

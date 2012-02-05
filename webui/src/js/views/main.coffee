@@ -12,6 +12,7 @@ class window.App
         @lobby_view = new LobbyView(this)
         @host_custom_view = new HostCustomView(this)
         @join_custom_view = new JoinCustomView(this)
+        @user_stats_view = new UserStatsView(this)
 
         @session = {}
         @config = null
@@ -102,17 +103,22 @@ class window.App
         blocked = @config.get('blocked_users')
         delete blocked[p] for p in players
         @config.set('blocked_users', blocked)
+
+    getUserStats: =>
+        @server.getUserStats(if this.isLoggedIn() then @session['region'] else 'AM')
     
     _connected: =>
         if this.isLoggedIn()
             @server.getUserProfile(@session['profile_url'], (err, profile) =>
                 return if err
                 this._initProfile(profile)
+                @user_stats_view.show()
                 @user_settings_view.show()
                 this._joinGlobalLobby()
             )
         else
             @login_view.show()
+            @user_stats_view.show()
             this._joinGlobalLobby()
 
     _lobbyJoined: =>
@@ -291,3 +297,29 @@ class window.BlocklistView extends View
 
     _error: (field, msg) =>
         this.$('#blocklist-add-btn').after(this._render('form-error', {msg: msg}))
+
+class window.UserStatsView extends View
+    id: 'user-stats-view'
+
+    container_id: 'user-stats'
+
+    initialize: =>
+        @started = false
+        @stats = null
+        @app.getServer().bind('userStats', this._update)
+
+    render: =>
+        $(@el).html(this._render('user-stats',
+            user_stats: @stats
+        ))
+
+    show: =>
+        super()
+        if not @started
+            @started = true
+            @app.getUserStats()
+
+    _update: (user_stats) =>
+        @stats = user_stats
+        this.render()
+        setTimeout(@app.getUserStats, 10000)

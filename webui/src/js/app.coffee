@@ -66,6 +66,9 @@ class window.GameServer extends Events
         @socket.on('lobbyMessages', (msgs) =>
             this.trigger('lobbyMessages', msgs)
         )
+        @socket.on('userStats', (user_stats) =>
+            this.trigger('userStats', user_stats)
+        )
 
     getUserProfile: (profile_url, cb) =>
         @socket.emit('getUserProfile', profile_url, cb)
@@ -89,6 +92,9 @@ class window.GameServer extends Events
 
     joinCustom: (id, player) =>
         @socket.emit('joinCustom', id, player)
+
+    getUserStats: (region) =>
+        @socket.emit('getUserStats', region)
 
     getID: =>
         return @socket.socket.sessionid

@@ -11,6 +11,7 @@
         %a(href="/faq/") FAQ
       %li
         %a(href="/about/") About
+    #user-stats.pull-right
 .container
   .row
     #cgf-content.span9
@@ -21,6 +22,16 @@
 
 %script(language="javascript" type="text/javascript")
   $(function () { new App().start(); });
+
+%script#user-stats-tmpl(type="text/template")
+  <% if (user_stats) { %>
+  %div 
+    %strong <%= user_stats.num_players %>
+    players online
+  %div
+    %strong <%= user_stats.num_queued %>
+    players queued
+  <% } %>
 
 %script#user-select-tmpl(type="text/template")
   <select id="<%= id + '-select' %>" class="span2"<% if (disabled) { %>disabled="disabled"<% } %>>
