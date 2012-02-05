@@ -33,13 +33,8 @@
   %h2 Settings
   %ul.unstyled
     %li
-      %i.user
-      <%- user.name + '.' + user.char_code %>
-    %li
-      %i.flag
-      <%= user.region %>
-    %li
-      <img src="/img/l/<%= user.league %>_m.png" />
+      <img src="/img/l/<%= user.league %>_m.png" style="vertical-align: middle" />
+      <%- user.name + '.' + user.char_code + '@' + user.region %>
     %li
       <%= race_select %>
     <% if (in_game) { %>
@@ -204,6 +199,7 @@
         %input#blocklist-add-name.medium(type="text")/
         %label Character code
         %input#blocklist-add-code.mini(type="text" maxlength=3)/
+        %br/
         %button#blocklist-add-btn.btn.btn-primary(type="button") Add
   %button#blocklist-close-btn.btn.btn-primary(type="button") Close
 
