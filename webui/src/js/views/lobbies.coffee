@@ -197,6 +197,7 @@ class window.LobbyView extends View
 
     show: =>
         super()
+        this._scrollChatBox()
         this.$('#msg-box').focus()
 
     exitLobby: =>
@@ -282,11 +283,14 @@ class window.LobbyView extends View
             raw_prefix: raw_prefix
             msg: msg
         ))
-        box = this.$('#chat-box')
-        box.scrollTop(box[0].scrollHeight)
+        this._scrollChatBox()
         if not @focused
             @missed_msgs += 1
             document.title = '[' + @missed_msgs + '] ' + @title
+    
+    _scrollChatBox: =>
+        box = this.$('#chat-box')
+        box.scrollTop(box[0].scrollHeight)
 
     _rateOk: =>
         now = new Date().getTime()
