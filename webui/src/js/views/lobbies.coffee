@@ -176,8 +176,14 @@ class window.LobbyView extends View
         @players = {}
         @last_chat_times = []
         @chat_blocked = false
+        @focused = true
+        @missed_msgs = 0
+        @title = document.title
         $(@el).html(this._render('lobby'))
         this._renderPlayers()
+
+        window.onfocus = this._focused
+        window.onblur = this._blurred
 
         server = @app.getServer()
         server.bind('connecting', this._connecting)
@@ -278,6 +284,9 @@ class window.LobbyView extends View
         ))
         box = this.$('#chat-box')
         box.scrollTop(box[0].scrollHeight)
+        if not @focused
+            @missed_msgs += 1
+            document.title = '[' + @missed_msgs + '] ' + @title
 
     _rateOk: =>
         now = new Date().getTime()
@@ -313,6 +322,14 @@ class window.LobbyView extends View
 
     _clearChat: =>
         this.$('#msg-list > *').remove()
+
+    _focused: =>
+        @focused = true
+        @missed_msgs = 0
+        document.title = @title
+    
+    _blurred: =>
+        @focused = false
 
 class window.HostCustomView extends View
     id: 'host-custom-view'
