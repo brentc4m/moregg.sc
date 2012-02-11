@@ -343,6 +343,8 @@ class UserProfiles
 
     _scrape: (profile_url, cb) =>
         error = 'Bad profile URL or an error occurred, try again.'
+        if not profile_url.match(/\/sc2\/\w+\/profile\/\d+\/\d+\//)
+            return cb(error)
         if profile_url.indexOf('http://us.battle.net') is 0
             region = 'AM'
         else if profile_url.indexOf('http://kr.battle.net') is 0
