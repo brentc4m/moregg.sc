@@ -45,7 +45,7 @@
   %ul.unstyled
     %li
       <img src="/img/l/<%= user.league %>_m.png" style="vertical-align: middle" />
-      <%- user.name + '.' + user.char_code + '@' + user.region %>
+      <%- user.name + '@' + user.region %>
     %li
       <%= race_select %>
     <% if (in_game) { %>
@@ -69,17 +69,15 @@
 %script#login-form-tmpl(type="text/template")
   %h2 Login
   %form
-    %label Profile URL
-    %input#login-profile-url(type="text")/
-    %label Character Code
-    %input#login-char-code(type="text" maxlength=3)/
     %label Race
     %select#login-race
       <% for (var i=0; i<races.length; i++) { %>
       <option value="<%= races[i].val %>"><%= races[i].label %></option>
       <% } %>
+    %label Profile URL
+    %input#login-profile-url(type="text")/
     %p 
-      %a#login-popover Where do I find these?
+      %a#login-popover Where do I find this?
     %button#login-btn.btn.btn-primary(type="button") Login
 
 %script#login-popover-tmpl(type="text/template")
@@ -89,11 +87,6 @@
     Click it, then click <strong>Profile</strong>. This is your profile page.
     Copy the URL from the location bar in your browser and paste it into the
     Profile URL box.
-  %br/
-  %p
-    You can find your character code in-game. Open the Starcraft 2 client and
-    login. Open your friends list and click <strong>Add Friend</strong>. You
-    should see your 3 digit character code in the window that comes up.
 
 %script#login-msg-tmpl(type="text/template")
   #login-msg <%= msg %>
@@ -172,7 +165,7 @@
   %div
     <%= player_link({player: players[i]}) %>
     <% if (!players[i].this_player) { %>
-    %b <a class="block-player" href="#<%= players[i].name + '.' + players[i].char_code %>">X</a>
+    %b <a class="block-player" href="<%= players[i].profile_url %>">X</a>
     <% } %>
   <% } %>
   <% if (players.length == 0) { %>
@@ -180,7 +173,9 @@
   <% } %>
 
 %script#player-link-tmpl(type="text/template")<
-  <img src="/img/l/<%= player.league %>.png"> <img src="/img/r/<%= player.race %>.png"> <a target="_blank" href="<%- player.profile_url %>"><%= player.name + '.' + player.char_code %></a>
+  <img src="/img/l/<%= player.league %>.png">
+  <img src="/img/r/<%= player.race %>.png">
+  <a target="_blank" href="<%- player.profile_url %>"><%= player.name %></a>
 
 %script#chat-msg-tmpl(type="text/template")
   .msg
@@ -198,20 +193,19 @@
 %script#blocklist-editor-tmpl(type="text/template")
   %h2 Blocklist
   %form
-    .row
-      .span4
-        %select#blocklist-remove-select(size=10 multiple="multiple" name="blocklist")
-          <% for (var i=0; i<blocklist.length; i++) { %>
-          %option <%= blocklist[i] %>
-          <% } %>
-        %button#blocklist-remove-btn.btn.btn-primary(type="button") Remove Selected
-      .span4
-        %label Name
-        %input#blocklist-add-name.medium(type="text")/
-        %label Character code
-        %input#blocklist-add-code.mini(type="text" maxlength=3)/
-        %br/
-        %button#blocklist-add-btn.btn.btn-primary(type="button") Add
+    %p
+      %select#blocklist-remove-select.span7(size=10 multiple="multiple" name="blocklist")
+        <% for (var i=0; i<blocklist.length; i++) { %>
+        %option <%= blocklist[i] %>
+        <% } %>
+      %br/
+      %button#blocklist-remove-btn.btn.btn-primary(type="button") Remove Selected
+
+    %p
+      %label Profile URL
+      %input#blocklist-add-url.span4(type="text")/
+      %br/
+      %button#blocklist-add-btn.btn.btn-primary(type="button") Add
   %button#blocklist-close-btn.btn.btn-primary(type="button") Close
 
 %script#host-custom-tmpl(type="text/template")

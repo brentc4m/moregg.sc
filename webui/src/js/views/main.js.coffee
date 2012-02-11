@@ -26,24 +26,17 @@ class window.App
     isLoggedIn: =>
         return @config isnt null
 
-    login: (profile_url, char_code, race) =>
-        login_valid = true
-        if not char_code or char_code.length isnt 3 or /\D/.test(char_code)
-            login_valid = false
-            @login_view.error('char-code',
-                'Character code must contain only 3 digits')
-        if login_valid
-            @login_view.loggingIn()
-            @server.getUserProfile(profile_url, (err, profile) =>
-                return @login_view.error('profile-url', err) if err
-                this._initSession(profile_url)
-                this._initProfile(profile)
-                @config.set('char_code', char_code)
-                @config.set('race', race)
-                @config.set('opp_leagues', [profile.league])
-                @user_settings_view.show()
-                this._joinGlobalLobby()
-            )
+    login: (profile_url, race) =>
+        @login_view.loggingIn()
+        @server.getUserProfile(profile_url, (err, profile) =>
+            return @login_view.error('profile-url', err) if err
+            this._initSession(profile_url)
+            this._initProfile(profile)
+            @config.set('race', race)
+            @config.set('opp_leagues', [profile.league])
+            @user_settings_view.show()
+            this._joinGlobalLobby()
+        )
 
     logout: =>
         localStorage.removeItem('session.profile_url')
@@ -82,7 +75,7 @@ class window.App
 
     getPlayer: =>
         player = _.clone(@session)
-        _.extend(player, @config.getSet(['char_code', 'race']))
+        _.extend(player, @config.getSet(['race']))
         return player
 
     getServer: =>
@@ -94,14 +87,14 @@ class window.App
     getRegion: =>
         return if this.isLoggedIn() then @session['region'] else 'AM'
 
-    addToBlocklist: (player) =>
+    addToBlocklist: (url) =>
         blocked = @config.get('blocked_users')
-        blocked[player] = true
+        blocked[url] = true
         @config.set('blocked_users', blocked)
 
-    removeFromBlocklist: (players) =>
+    removeFromBlocklist: (urls) =>
         blocked = @config.get('blocked_users')
-        delete blocked[p] for p in players
+        delete blocked[url] for url in urls
         @config.set('blocked_users', blocked)
 
     getUserStats: =>
@@ -139,7 +132,6 @@ class window.App
         return null unless this.isLoggedIn()
         return {
             profile_url: @session['profile_url']
-            char_code: @config.get('char_code')
             race: @config.get('race')
         }
 
@@ -158,7 +150,7 @@ class window.LoginView extends View
 
     render: =>
         $(@el).html(this._render('login-form', races: RACE_OPTS))
-        title = 'Where do I find these?'
+        title = 'Where do I find this?'
         content = this._render('login-popover')
         this.$('#login-popover').popover(
             placement: 'left'
@@ -170,9 +162,8 @@ class window.LoginView extends View
         this.$('input').removeClass('error')
         this.$('.help-inline').remove()
         profile_url = this.$('#login-profile-url').val()
-        char_code = this.$('#login-char-code').val()
         race = this.$('#login-race option:selected').val()
-        @app.login(profile_url, char_code, race)
+        @app.login(profile_url, race)
 
     loginOnEnter: (e) =>
         this.login() if e.keyCode is 13
@@ -279,24 +270,19 @@ class window.BlocklistView extends View
 
     add: =>
         this.$('.help-inline').remove()
-        name = this.$('#blocklist-add-name').val()
-        char_code = this.$('#blocklist-add-code').val()
-        if name.length is 0
-            return this._error('add-name', 'Enter a name')
-        if not char_code or char_code.length isnt 3 or /\D/.test(char_code)
-            return this._error('add-code', 'Code must be exactly 3 digits')
-        @app.addToBlocklist(name + '.' + char_code)
+        url = this.$('#blocklist-add-url').val()
+        if url.length is 0
+            this.$('#blocklist-add-btn').after(this._render('form-error',
+                {msg: 'Enter a profile URL'}))
+        @app.addToBlocklist(url)
         this.render()
 
     remove: =>
         selected = this.$('#blocklist-remove-select option:selected')
-        users = (o.value for o in selected)
-        if users.length isnt 0
-            @app.removeFromBlocklist(users)
+        urls = (o.value for o in selected)
+        if urls.length isnt 0
+            @app.removeFromBlocklist(urls)
             this.render()
-
-    _error: (field, msg) =>
-        this.$('#blocklist-add-btn').after(this._render('form-error', {msg: msg}))
 
 class window.UserStatsView extends View
     id: 'user-stats-view'

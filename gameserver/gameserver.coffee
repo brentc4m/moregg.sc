@@ -48,8 +48,7 @@ class Player
         return _.intersection(@params.maps, other.params.maps)
 
     blocklistOk: (other) =>
-        user = other.name + '.' + other.char_code
-        return not @params.blocked_users[user]
+        return not @params.blocked_users[other.profile_url]
 
     lobbyJoined: (players) =>
         @socket.emit('lobbyJoined', players)
@@ -81,7 +80,6 @@ class Player
     toJSON: =>
         id: @id
         name: @name
-        char_code: @char_code
         profile_url: @profile_url
         region: @region
         league: @league

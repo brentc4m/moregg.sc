@@ -220,9 +220,9 @@ class window.LobbyView extends View
     blockPlayer: (e) =>
         e.preventDefault()
         this.$('.alert-message').remove()
-        player = e.target.hash.slice(1)
-        @app.addToBlocklist(player)
-        this.alert('success', player + ' successfully blocked. You will no longer see games with this player.')
+        url = e.target.href
+        @app.addToBlocklist(url)
+        this.alert('success', 'Successfully blocked. You will no longer see games with this player.')
 
     _renderPlayers: =>
         this.$('#user-list').html(this._render('lobby-players',
