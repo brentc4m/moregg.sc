@@ -299,7 +299,7 @@ class UserProfiles
 
     get: (profile_url, cb) =>
         this._getFromDB(profile_url, (err, profile) =>
-            return cb(err) if err
+            return if err
             return cb(null, profile) if profile isnt null
             this._queueScrape(profile_url, (err, profile) =>
                 return cb(err) if err

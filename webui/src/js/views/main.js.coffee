@@ -110,7 +110,7 @@ class window.App
     _connected: =>
         if this.isLoggedIn()
             @server.getUserProfile(@session['profile_url'], (err, profile) =>
-                return if err
+                return this.logout() if err # bad profile url, kill it
                 this._initProfile(profile)
                 @user_stats_view.show()
                 @user_settings_view.show()
