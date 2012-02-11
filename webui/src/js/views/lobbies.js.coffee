@@ -265,14 +265,18 @@ class window.LobbyView extends View
         this._addMsg(msg) for msg in msgs
 
     _lobbyFinished: (game_info) =>
-        series = _.filter(SERIES_OPTS, (s) -> s.val in game_info.series)
-        series = _.pluck(series, 'label')
-        series = series.join(', ')
-        maps = (MAP_LABELS[m] for m in game_info.maps).join(', ')
         this._addMsg('Lobby complete!')
-        this._addMsg('Series type: ' + series)
-        this._addMsg('Maps: ' + maps)
-        this._addMsg('First map: ' + MAP_LABELS[game_info.random_map])
+        if 'series' of game_info
+            series = _.filter(SERIES_OPTS, (s) -> s.val in game_info.series)
+            series = _.pluck(series, 'label')
+            series = series.join(', ')
+            this._addMsg('Series type: ' + series)
+        if 'maps' of game_info
+            maps = (MAP_LABELS[m] for m in game_info.maps).join(', ')
+            this._addMsg('Maps: ' + maps)
+            this._addMsg('First map: ' + MAP_LABELS[game_info.random_map])
+        this._addMsg('Battle.net Chatroom: ' + game_info.chatroom)
+        this._addMsg('Join the chat on BNet and play!')
 
     _addMsg: (msg, raw_prefix) =>
         if not raw_prefix?

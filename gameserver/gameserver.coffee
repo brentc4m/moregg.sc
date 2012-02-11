@@ -87,13 +87,18 @@ class Player
         league: @league
         race: @race
 
-class Lobby
+class BaseLobby
+    _generateChatroom: =>
+        return 'mgg-' + uuid.v4().slice(0, 8)
+
+class Lobby extends BaseLobby
     constructor: (p1, p2, match) ->
         @players = [p1, p2]
         p1.playerJoined(p2)
         p2.playerJoined(p1)
         match.random_map = match.maps[Math.floor(
             Math.random()*match.maps.length)]
+        match.chatroom = this._generateChatroom()
         p.lobbyFinished(match) for p in @players
 
     removePlayer: (id) =>
@@ -105,7 +110,7 @@ class Lobby
         to_player = _.reject(@players, (p) -> p.id is id)[0]
         to_player.chatReceived(id, text)
 
-class CustomLobby
+class CustomLobby extends BaseLobby
     constructor: (name, map, max_players) ->
         @id = uuid.v1()
         @name = name
@@ -122,8 +127,8 @@ class CustomLobby
         player.lobbyJoined(@players)
         player.sendMsgs(['Lobby name: ' + @name, 'Map: ' + @map])
         if this.isFull()
-            msg = 'Lobby is full, add eachother on BNet and play!'
-            p.sendMsg(msg) for p in _.values(@players)
+            match = {chatroom: this._generateChatroom()}
+            p.lobbyFinished(match) for p in _.values(@players)
         else
             player.sendMsg('Waiting for more players..')
 
