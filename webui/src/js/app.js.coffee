@@ -4,7 +4,6 @@ Events.prototype extends Backbone.Events
 
 class window.UserConfig
     defaults:
-        char_code: null
         race: null
         opp_races: ['r', 't', 'z', 'p']
         opp_leagues: []
@@ -36,8 +35,10 @@ class window.GameServer extends Events
         address = localStorage.getItem('gameserver.url')
         if not address?
             address = 'http://aeacus.moregg.sc:443'
-        this.trigger('connecting')
         @socket = io.connect(address)
+        @socket.on('connecting', (transport) =>
+            this.trigger('connecting', transport)
+        )
         @socket.on('connect', =>
             this.trigger('connect')
         )
@@ -110,9 +111,10 @@ class window.View extends Backbone.View
         $('#' + @container_id + ' > *').detach()
         $('#' + @container_id).append(@el)
 
-    alert: (type, msg) =>
+    alert: (type, msg, heading) =>
         this.$('.alert').remove()
-        $(@el).prepend(this._render('alert', {type: type, msg: msg}))
+        $(@el).prepend(this._render('alert',
+            {type: type, msg: msg, heading: heading}))
 
     _getTemplate: _.memoize((id) ->
         return _.template($('#' + id + '-tmpl').html())

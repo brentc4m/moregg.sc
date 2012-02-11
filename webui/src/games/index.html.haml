@@ -187,6 +187,9 @@
 
 %script#alert-tmpl(type="text/template")
   <div class="alert alert-<%= type %>">
+  <% if (heading) { %>
+  %h4.alert-heading <%= heading %>
+  <% } %>
   <%= msg %>
   </div>
 
@@ -253,3 +256,17 @@
     <% } else { %>
     No games found.
     <% } %>
+
+%script#websocket-info-tmpl(type="text/template")
+  More GG depends on WebSockets to provide the best experience possible and
+  without them may not function at all. WebSockets are supported by the latest
+  versions of most popular web browsers.
+
+  %p
+    %ul.unstyled
+      %li
+        %a(href="https://www.google.com/chrome") Get the latest Google Chrome
+      %li
+        %a(href="http://www.mozilla.org/en-US/firefox/") Get the latest Mozilla Firefox
+      %li
+        %a(href="http://techdows.com/2010/12/enable-websockets-in-opera-11.html") Enable WebSockets in Opera

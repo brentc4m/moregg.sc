@@ -1,6 +1,7 @@
-class window.App
+class window.App extends View
     constructor: ->
         @server = new GameServer()
+        @server.bind('connecting', this._connecting)
         @server.bind('connect', this._connected)
         @server.bind('lobbyJoined', this._lobbyJoined)
         @server.bind('globalLobbyJoined', this._lobbyJoined)
@@ -99,6 +100,10 @@ class window.App
 
     getUserStats: =>
         @server.getUserStats(if this.isLoggedIn() then @session['region'] else 'AM')
+
+    _connecting: (transport) =>
+        if transport isnt 'websocket'
+            @lobby_view.alert('error', this._render('websocket-info'), 'WebSockets missing')
     
     _connected: =>
         if this.isLoggedIn()
