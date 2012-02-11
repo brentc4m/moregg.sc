@@ -63,7 +63,7 @@ window.MAPS = [
         {val: 'blz_ss', label: "Scrap Station"},
         {val: 'blz_sc', label: "Searing Crater"},
         {val: 'blz_slp', label: "Slag Pits"},
-        {val: 'blz_sow', label: "Steps of War"},
+        {val: 'blz_sow', label: "Steppes of War"},
         {val: 'blz_tr', label: "Tectonic Rift"},
         {val: 'blz_ter', label: "Terminus"},
         {val: 'blz_tp', label: "Typhon Peaks"},

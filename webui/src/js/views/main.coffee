@@ -16,8 +16,8 @@ class window.App
 
         @session = {}
         @config = null
-        if 'session.profile_url' of localStorage
-            this._initSession(localStorage['session.profile_url'])
+        profile_url = localStorage.getItem('session.profile_url')
+        this._initSession(profile_url) if profile_url
 
     start: =>
         @lobby_view.show()
@@ -46,7 +46,7 @@ class window.App
             )
 
     logout: =>
-        delete localStorage['session.profile_url']
+        localStorage.removeItem('session.profile_url')
         window.location.reload()
 
     showCreateLobby: =>
@@ -125,7 +125,7 @@ class window.App
         @lobby_view.show()
 
     _initSession: (profile_url) =>
-        localStorage['session.profile_url'] = profile_url
+        localStorage.setItem('session.profile_url', profile_url)
         @session = {profile_url: profile_url}
         @config = new UserConfig(@session['profile_url'])
 

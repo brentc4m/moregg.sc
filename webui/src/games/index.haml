@@ -26,11 +26,13 @@
 %script#user-stats-tmpl(type="text/template")
   <% if (user_stats) { %>
   %div 
+    <% if (user_stats.num_players == 1) label = 'player'; else label = 'players'; %>
     %strong <%= user_stats.num_players %>
-    players online
+    <%= label %> online
   %div
+    <% if (user_stats.num_queued == 1) label = 'player'; else label = 'players'; %>
     %strong <%= user_stats.num_queued %>
-    players queued
+    <%= label %> queued
   <% } %>
 
 %script#user-select-tmpl(type="text/template")

@@ -15,7 +15,8 @@ class window.UserConfig
 
     constructor: (profile_url) ->
         @key = 'userconfig.' + profile_url
-        @data = if @key of localStorage then JSON.parse(localStorage[@key]) else {}
+        stor_data = localStorage.getItem(@key)
+        @data = if stor_data? then JSON.parse(stor_data) else {}
         @data = _.defaults(@data, @defaults)
 
     get: (key) =>
@@ -28,15 +29,13 @@ class window.UserConfig
     
     set: (key, val) =>
         @data[key] = val
-        localStorage[@key] = JSON.stringify(@data)
+        localStorage.setItem(@key, JSON.stringify(@data))
 
 class window.GameServer extends Events
     connect: ->
-        if 'gameserver.url' of localStorage
-            address = localStorage['gameserver.url']
-        else
+        address = localStorage.getItem('gameserver.url')
+        if not address?
             address = 'http://aeacus.moregg.sc:443'
-        window.WEB_SOCKET_SWF_LOCATION = '/swf/WebSocketMainInsecure.swf'
         this.trigger('connecting')
         @socket = io.connect(address)
         @socket.on('connect', =>
