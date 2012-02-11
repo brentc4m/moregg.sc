@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cd src
+stasis -p /tmp/moregg_preview -d 4000
