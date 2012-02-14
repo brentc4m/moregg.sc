@@ -274,9 +274,10 @@ class OVOLobbyManager
         return @pending_players_order.length
 
 class GlobalLobbyManager
-    constructor: ->
+    constructor: (region) ->
         @players = {}
         @anons = {}
+        @region = region
 
     addPlayer: (player) =>
         delete @anons[player.id]
@@ -284,6 +285,7 @@ class GlobalLobbyManager
         a.emit('playerJoined', player) for a in _.values(@anons)
         @players[player.id] = player
         player.globalLobbyJoined(@players)
+        util.log(@region + ': ' + player.name + ' joined')
     
     addAnon: (socket) =>
         @anons[socket.id] = socket
@@ -293,14 +295,17 @@ class GlobalLobbyManager
         for p in _.values(@players) when p.id isnt player_id
             p.chatReceived(player_id, text)
         a.emit('chatReceived', {id: player_id, text: text}) for a in _.values(@anons)
+        util.log(@region + ': ' + @players[player_id].name + ': ' + text)
 
     removePlayer: (id) =>
-        was_player = id of @players
-        delete @players[id]
-        delete @anons[id]
-        if was_player
+        if id of @players
+            player = @players[id]
+            delete @players[id]
             p.playerLeft(id) for p in _.values(@players)
             a.emit('playerLeft', id) for a in _.values(@anons)
+            util.log(@region + ': ' + player.name + ' left')
+        else
+            delete @anons[id]
 
     numPlayers: =>
         return _.keys(@players).length
@@ -502,7 +507,7 @@ class GameServer
 
     _globalManager: (region) =>
         if not @global_managers[region]
-            @global_managers[region] = new GlobalLobbyManager()
+            @global_managers[region] = new GlobalLobbyManager(region)
         return @global_managers[region]
     
     _ovoManager: (region) =>
