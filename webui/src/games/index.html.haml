@@ -51,6 +51,9 @@
     <% if (in_game) { %>
     %li
       %button#exit-lobby-btn.btn.btn-primary Exit lobby
+    <% } else if (in_queue) { %>
+    %li
+      %button#exit-queue-btn.btn.btn-primary Exit queue
     <% } else { %>
     %li
       %button#show-lobby-btn.btn.btn-primary Show Lobby
@@ -141,13 +144,13 @@
         </div>
         <% } %>
 
-%script#create-lobby-tmpl(type="text/template")
-  %h2 Find game
+%script#queue-ovo-tmpl(type="text/template")
+  %h2 Find 1v1
   %form.form-horizontal
     <%= fields %>
     %fieldset.form-actions
-      %button#create-lobby-btn.btn.btn-primary(type="button") Find game
-      %button#close-create-lobby-btn.btn.btn-primary(type="button") Close
+      %button#queue-ovo-btn.btn.btn-primary(type="button") Find 1v1
+      %button#close-queue-ovo-btn.btn.btn-primary(type="button") Close
 
 %script#lobby-tmpl(type="text/template")
   %h2 Lobby

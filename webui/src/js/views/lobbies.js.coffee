@@ -75,12 +75,12 @@ window.MAP_LABELS = {}
 for map in _.flatten(_.pluck(MAPS, 'maps'))
     MAP_LABELS[map.val] = map.label
 
-class window.CreateLobbyView extends View
-    id: 'create-lobby-view'
+class window.QueueOVOView extends View
+    id: 'queue-ovo-view'
 
     events:
-        'click #create-lobby-btn': 'createLobby'
-        'click #close-create-lobby-btn': 'close'
+        'click #queue-ovo-btn': 'queue'
+        'click #close-queue-ovo-btn': 'close'
         'click #map-tabs li a': 'changeMapsTab'
         'change input[name="opp-races"]': 'changeOppRaces'
         'change input[name="opp-leagues"]': 'changeOppLeagues'
@@ -111,13 +111,13 @@ class window.CreateLobbyView extends View
             sections: MAPS
             checked: config.get('maps')
         )
-        $(@el).html(this._render('create-lobby', {fields: fields}))
+        $(@el).html(this._render('queue-ovo', {fields: fields}))
 
     close: =>
         @app.showLobby()
 
-    createLobby: =>
-        @app.createLobby() if this._validateOptions()
+    queue: =>
+        @app.queue() if this._validateOptions()
 
     changeOppRaces: =>
         checked = this.$('input[name="opp-races"]:checked')
@@ -169,7 +169,6 @@ class window.LobbyView extends View
     events:
         'keypress #msg-box': 'sendChatOnEnter'
         'click a.block-player': 'blockPlayer'
-        'click #exit-lobby-btn': 'exitLobby'
 
     initialize: =>
         @in_global = false
@@ -199,9 +198,6 @@ class window.LobbyView extends View
         super()
         this._scrollChatBox()
         this.$('#msg-box').focus()
-
-    exitLobby: =>
-        @app.exitLobby()
 
     sendChat: =>
         msg_box = this.$('#msg-box')

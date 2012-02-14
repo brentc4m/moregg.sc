@@ -76,8 +76,11 @@ class window.GameServer extends Events
     joinGlobalLobby: (player) =>
         @socket.emit('joinGlobalLobby', player)
 
-    createLobby: (player, lobby_opts) =>
-        @socket.emit('createLobby', player, lobby_opts)
+    queue: (player, lobby_opts) =>
+        @socket.emit('queue', player, lobby_opts)
+
+    unqueue: =>
+        @socket.emit('unqueue')
 
     sendChat: (msg) =>
         @socket.emit('sendChat', msg)

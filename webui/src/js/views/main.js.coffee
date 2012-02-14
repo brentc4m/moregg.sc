@@ -9,7 +9,7 @@ class window.App extends View
         @login_view = new LoginView(this)
         @user_settings_view = new UserSettingsView(this)
         @blocklist_view = new BlocklistView(this)
-        @create_lobby_view = new CreateLobbyView(this)
+        @queue_ovo_view = new QueueOVOView(this)
         @lobby_view = new LobbyView(this)
         @host_custom_view = new HostCustomView(this)
         @join_custom_view = new JoinCustomView(this)
@@ -43,14 +43,19 @@ class window.App extends View
         localStorage.removeItem('session.profile_url')
         window.location.reload()
 
-    showCreateLobby: =>
-        @create_lobby_view.show()
+    showQueueOVO: =>
+        @queue_ovo_view.show()
     
     showLobby: =>
         @lobby_view.show()
 
-    createLobby: =>
-        @server.createLobby(this._getPlayerForServer(), this._getLobbyOpts())
+    queue: =>
+        @server.queue(this._getPlayerForServer(), this._getLobbyOpts())
+        @lobby_view.show()
+        @user_settings_view.queued()
+
+    unqueue: =>
+        @server.unqueue()
 
     exitLobby: =>
         this._joinGlobalLobby()
@@ -196,12 +201,14 @@ class window.UserSettingsView extends View
         'click #show-join-custom-btn': 'showJoinCustom'
         'click #show-host-custom-btn': 'showHostCustom'
         'click #exit-lobby-btn': 'exitLobby'
+        'click #exit-queue-btn': 'exitQueue'
         'click #open-blocklist-btn': 'openBlocklist'
         'click #logout-btn': 'logout'
         'change #race-select': 'changeRace'
 
     initialize: =>
         @in_game = false
+        @in_queue = false
         server = @app.getServer()
         server.bind('lobbyJoined', this._lobbyJoined)
         server.bind('globalLobbyJoined', this._globalLobbyJoined)
@@ -218,6 +225,7 @@ class window.UserSettingsView extends View
             user: @app.getPlayer()
             race_select: race_select
             in_game: @in_game
+            in_queue: @in_queue
         ))
 
     logout: =>
@@ -231,10 +239,15 @@ class window.UserSettingsView extends View
         @app.showLobby()
 
     findGame: =>
-        @app.showCreateLobby()
+        @app.showQueueOVO()
 
     exitLobby: =>
         @app.exitLobby()
+
+    exitQueue: =>
+        @in_queue = false
+        @app.unqueue()
+        this.render()
 
     openBlocklist: =>
         @app.showBlocklist()
@@ -245,13 +258,19 @@ class window.UserSettingsView extends View
     showHostCustom: =>
         @app.showHostCustom()
 
+    queued: =>
+        @in_queue = true
+        this.render()
+
     _lobbyJoined: =>
         @in_game = true
+        @in_queue = false
         this.render()
 
     _globalLobbyJoined: =>
         if @app.isLoggedIn()
             @in_game = false
+            @in_queue = false
             this.render()
 
 class window.BlocklistView extends View

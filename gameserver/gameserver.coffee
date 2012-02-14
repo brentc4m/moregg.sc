@@ -91,21 +91,28 @@ class BaseLobby
 
 class Lobby extends BaseLobby
     constructor: (p1, p2, match) ->
-        @players = [p1, p2]
-        p1.playerJoined(p2)
-        p2.playerJoined(p1)
+        @players = {}
+        @players[p1.id] = p1
+        @players[p2.id] = p2
         match.random_map = match.maps[Math.floor(
             Math.random()*match.maps.length)]
         match.chatroom = this._generateChatroom()
-        p.lobbyFinished(match) for p in @players
+        p.lobbyJoined(@players) for p in _.values(@players)
+        p.lobbyFinished(match) for p in _.values(@players)
 
     removePlayer: (id) =>
-        to_return = _.find(@players, (p) -> p.id isnt id)
-        to_return.playerLeft(id)
-        return to_return
+        delete @players[id]
+        players = _.values(@players)
+        if players.length is 1
+            to_return = players[0]
+            to_return.playerLeft(id)
+            return to_return
+        else
+            return null
 
     sendChat: (id, text) =>
-        to_player = _.reject(@players, (p) -> p.id is id)[0]
+        return if _.values(@players).length < 2
+        to_player = _.reject(_.values(@players), (p) -> p.id is id)[0]
         to_player.chatReceived(id, text)
 
 class CustomLobby extends BaseLobby
@@ -197,56 +204,74 @@ class CustomLobbyManager
         return this.numPlayers()
 
 class OVOLobbyManager
-    constructor: ->
-        @pending_players = []
+    constructor: (global_manager) ->
+        @global_manager = global_manager
+        @pending_players_order = []
+        @pending_players = {}
         @lobbies_by_player_id = {}
 
-    addPlayer: (player) =>
-        @pending_players.push(player)
-        players = {}
-        players[player.id] = player
-        player.lobbyJoined(players)
-        player.sendMsg('Searching for an opponent..')
+    queue: (player) =>
+        @pending_players[player.id] = player
+        @pending_players_order.push(player.id)
+        player.sendMsg('Queued for 1v1, searching for an opponent..')
+
+    unqueue: (player_id, player_triggered) =>
+        player = @pending_players[player_id]
+        delete @pending_players[player_id]
+        @pending_players_order = _.reject(@pending_players_order,
+            (id) -> id is player_id)
+        player.sendMsg('Removed from 1v1 queue') if player_triggered
+        return @global_manager
 
     removePlayer: (player_id) =>
         if player_id of @lobbies_by_player_id
             lobby = @lobbies_by_player_id[player_id]
-            other_player = lobby.removePlayer(player_id)
-            @pending_players.push(other_player)
-            other_player.sendMsg('Searching for an opponent..')
-            delete @lobbies_by_player_id[other_player.id]
             delete @lobbies_by_player_id[player_id]
+            other_player = lobby.removePlayer(player_id)
+            if other_player?
+                other_player.sendMsg('Requeue to find another opponent')
         else
-            @pending_players = _.reject(@pending_players,
-                (p) -> p.id is player_id)
+            # queued player being removed
+            this.unqueue(player_id, false)
+            @global_manager.removePlayer(player_id)
 
     matchmake: =>
-        new_pending = []
-        while @pending_players.length > 0
-            player = @pending_players.shift()
-            continue if player.id of @lobbies_by_player_id
+        new_pending = {}
+        new_pending_order = []
+        while @pending_players_order.length > 0
+            player_id = @pending_players_order.shift()
+            continue if player_id of @lobbies_by_player_id
+            player = @pending_players[player_id]
             matched = false
-            for other_player in @pending_players
+            for other_player_id in @pending_players_order
+                other_player = @pending_players[other_player_id]
                 match = player.matches(other_player)
                 if match
+                    @global_manager.removePlayer(player.id)
+                    @global_manager.removePlayer(other_player.id)
                     lobby = new Lobby(player, other_player, match)
                     @lobbies_by_player_id[player.id] = lobby
                     @lobbies_by_player_id[other_player.id] = lobby
                     matched = true
                     break
-            new_pending.push(player) if not matched
+            if not matched
+                new_pending[player.id] = player
+                new_pending_order.push(player.id)
         @pending_players = new_pending
+        @pending_players_order = new_pending_order
 
     sendChat: (player_id, text) =>
-        # players by themselves have no lobby
         if player_id of @lobbies_by_player_id
             @lobbies_by_player_id[player_id].sendChat(player_id, text)
+        else
+            # still in global lobby
+            @global_manager.sendChat(player_id, text)
 
     numPlayers: =>
         return _.keys(@lobbies_by_player_id).length + this.numQueued()
 
     numQueued: =>
-        return @pending_players.length
+        return @pending_players_order.length
 
 class GlobalLobbyManager
     constructor: ->
@@ -407,16 +432,19 @@ class GameServer
     getUserProfile: (socket, profile_url, cb) =>
         @profiles.get(profile_url, cb)
 
-    createLobby: (socket, player_info, lobby_opts) =>
+    queue: (socket, player_info, lobby_opts) =>
         @profiles.get(player_info.profile_url, (err, profile) =>
             return if err
             player_info = _.extend(player_info, profile)
             player = new Player(socket, player_info, lobby_opts)
-            this._removePlayer(player.id)
             manager = this._ovoManager(player.region)
+            manager.queue(player)
             @managers_by_id[player.id] = manager
-            manager.addPlayer(player)
         )
+
+    unqueue: (socket) =>
+        global_manager = @managers_by_id[socket.id].unqueue(socket.id, true)
+        @managers_by_id[socket.id] = global_manager
 
     sendChat: (socket, text) =>
         @managers_by_id[socket.id].sendChat(socket.id, text)
@@ -470,6 +498,7 @@ class GameServer
     _removePlayer: (id) =>
         if id of @managers_by_id
             @managers_by_id[id].removePlayer(id)
+            delete @managers_by_id[id]
 
     _globalManager: (region) =>
         if not @global_managers[region]
@@ -478,7 +507,8 @@ class GameServer
     
     _ovoManager: (region) =>
         if not @ovo_managers[region]
-            @ovo_managers[region] = new OVOLobbyManager()
+            globby = this._globalManager(region)
+            @ovo_managers[region] = new OVOLobbyManager(globby)
             setInterval(@ovo_managers[region].matchmake, 5000)
         return @ovo_managers[region]
 
