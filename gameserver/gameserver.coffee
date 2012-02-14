@@ -336,6 +336,13 @@ class UserProfiles
             )
         )
 
+    refresh: (profile_url, cb) =>
+        this._queueScrape(profile_url, (err, profile) =>
+            return if err
+            this._updateDB(profile_url, profile)
+            cb(profile)
+        )
+
     _getFromDB: (profile_url, cb) =>
         @db.get(
             'SELECT region, name, league FROM profiles WHERE url = ?',
@@ -348,6 +355,14 @@ class UserProfiles
                     cb(null, null)
                 else
                     cb(null, {region: row.region, name: row.name, league: row.league})
+        )
+
+    _updateDB: (profile_url, profile) =>
+        @db.run(
+            'UPDATE profiles SET region = $1, name = $2, league = $3 WHERE url = $4',
+            [profile.region, profile.name, profile.league, profile_url],
+            (err) =>
+                console.log(err) if err
         )
 
     _putInDB: (profile_url, profile) =>
@@ -436,6 +451,9 @@ class GameServer
 
     getUserProfile: (socket, profile_url, cb) =>
         @profiles.get(profile_url, cb)
+
+    refreshProfile: (socket, profile_url, cb) =>
+        @profiles.refresh(profile_url, cb)
 
     queue: (socket, player_info, lobby_opts) =>
         @profiles.get(player_info.profile_url, (err, profile) =>

@@ -73,6 +73,9 @@ class window.GameServer extends Events
     getUserProfile: (profile_url, cb) =>
         @socket.emit('getUserProfile', profile_url, cb)
 
+    refreshProfile: (profile_url, cb) =>
+        @socket.emit('refreshProfile', profile_url, cb)
+
     joinGlobalLobby: (player) =>
         @socket.emit('joinGlobalLobby', player)
 

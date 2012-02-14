@@ -106,6 +106,12 @@ class window.App extends View
     getUserStats: =>
         @server.getUserStats(if this.isLoggedIn() then @session['region'] else 'AM')
 
+    refreshProfile: =>
+        @server.refreshProfile(@session['profile_url'], (profile) =>
+            this._initProfile(profile)
+            @user_settings_view.render()
+        )
+
     _connecting: (transport) =>
         if transport isnt 'websocket'
             @lobby_view.alert('error', this._render('websocket-info'), 'WebSockets missing')
@@ -203,6 +209,7 @@ class window.UserSettingsView extends View
         'click #exit-lobby-btn': 'exitLobby'
         'click #exit-queue-btn': 'exitQueue'
         'click #open-blocklist-btn': 'openBlocklist'
+        'click #refresh-profile-btn': 'refreshProfile'
         'click #logout-btn': 'logout'
         'change #race-select': 'changeRace'
 
@@ -261,6 +268,9 @@ class window.UserSettingsView extends View
     queued: =>
         @in_queue = true
         this.render()
+
+    refreshProfile: =>
+        @app.refreshProfile()
 
     _lobbyJoined: =>
         @in_game = true
