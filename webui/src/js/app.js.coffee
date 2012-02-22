@@ -36,11 +36,17 @@ class window.GameServer extends Events
         if not address?
             address = 'http://aeacus.moregg.sc:443'
         @socket = io.connect(address)
+        @socket.on('connect_failed', =>
+            this.trigger('connect_failed')
+        )
         @socket.on('connecting', (transport) =>
             this.trigger('connecting', transport)
         )
         @socket.on('connect', =>
             this.trigger('connect')
+        )
+        @socket.on('error', (msg) =>
+            this.trigger('error', msg)
         )
         @socket.on('lobbyJoined', (players) =>
             this.trigger('lobbyJoined', players)
