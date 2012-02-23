@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cd dist
+s3cmd -P sync . s3://moregg.sc

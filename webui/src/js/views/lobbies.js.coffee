@@ -6,14 +6,14 @@ window.SERIES_OPTS = [
 
 window.MAPS = [
     {name: 'ladder', label: 'Ladder', maps: [
-        {val: 'blz_ap', label: "Arid Plateau"},
         {val: 'blz_as', label: "Antiga Shipyard"},
+        {val: 'blz_ckle', label: "Cloud Kingdom LE"},
         {val: 'blz_ev', label: "Entombed Valley"},
+        {val: 'blz_kcle', label: "Korhal Compound LE"},
         {val: 'blz_me', label: "Metalopolis"},
         {val: 'blz_sp', label: "Shakuras Plateau"},
-        {val: 'blz_tdale', label: "Tal'Darim Altar LE"},
+        {val: 'blz_tdale', label: "Tal'darim Altar LE"},
         {val: 'blz_st', label: "The Shattered Temple"},
-        {val: 'blz_xnc', label: "Xel'Naga Caverns"}
     ]},
     {name: 'mlg', label: 'MLG', maps: [
         {val: 'mlg_as', label: "MLG Antiga Shipyard"},
@@ -22,7 +22,7 @@ window.MAPS = [
         {val: 'mlg_me', label: "MLG Metalopolis"},
         {val: 'mlg_sp', label: "MLG Shakuras Plateau"},
         {val: 'mlg_st', label: "MLG Shattered Temple"},
-        {val: 'mlg_tdale', label: "MLG Tal'Darim Altar"},
+        {val: 'mlg_tdale', label: "MLG Tal'darim Altar"},
         {val: 'mlg_te', label: "MLG Terminus"},
         {val: 'mlg_tb', label: "MLG Testbug"},
         {val: 'mlg_tp', label: "MLG Typhon Peaks"},
@@ -45,6 +45,7 @@ window.MAPS = [
         {val: 'blz_av', label: "Agria Valley"},
         {val: 'blz_ab', label: "Abyss"},
         {val: 'blz_ac', label: "Abyssal Caverns"},
+        {val: 'blz_ap', label: "Arid Plateau"},
         {val: 'blz_bwg', label: "Backwater Gulch"},
         {val: 'blz_bs', label: "Blistering Sands"},
         {val: 'blz_bg', label: "Burial Grounds"},
@@ -68,6 +69,7 @@ window.MAPS = [
         {val: 'blz_ter', label: "Terminus"},
         {val: 'blz_tp', label: "Typhon Peaks"},
         {val: 'blz_ws', label: "Worldship"}
+        {val: 'blz_xnc', label: "Xel'Naga Caverns"}
     ]}
 ]
 

@@ -7,8 +7,8 @@ class window.UserConfig
         race: null
         opp_races: ['r', 't', 'z', 'p']
         opp_leagues: []
-        maps: ['blz_ap', 'blz_as', 'blz_ev', 'blz_me', 'blz_sp', 'blz_tdale',
-            'blz_st', 'blz_xnc']
+        maps: ['blz_as', 'blz_ckle', 'blz_ev', 'blz_kcle', 'blz_me', 'blz_sp',
+            'blz_tdale', 'blz_st']
         series: ['bo1']
         blocked_users: {}
 
@@ -17,6 +17,11 @@ class window.UserConfig
         stor_data = localStorage.getItem(@key)
         @data = if stor_data? then JSON.parse(stor_data) else {}
         @data = _.defaults(@data, @defaults)
+        
+        last_map_update = this.get('last_map_update')
+        if not last_map_update? or last_map_update isnt 's6'
+            this.set('maps', @defaults.maps)
+            this.set('last_map_update', 's6')
 
     get: (key) =>
         return @data[key]
