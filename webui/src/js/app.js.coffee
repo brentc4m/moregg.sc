@@ -34,7 +34,10 @@ class window.GameServer extends Events
     connect: ->
         address = localStorage.getItem('gameserver.url')
         if not address?
-            address = 'http://aeacus.moregg.sc:443'
+            if window.location.host is 'moregg.sc'
+                address = 'http://aeacus.moregg.sc:443'
+            else
+                address = 'http://localhost:443'
         @socket = io.connect(address)
         @socket.on('connect_failed', =>
             this.trigger('connect_failed')

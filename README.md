@@ -34,8 +34,8 @@ Follow these steps to get started on a base Ubuntu 11.10 install.
 
 You should now be able to access the WebUI from your browser at
 [http://localhost:4000](http://localhost:4000). By default it will try to
-connect to the production game server. To change this you'll need to set the
-LocalStorage value `gameserver.url` to `http://localhost:443`. You can modify
+connect to the game server at `http://localhost:443`. If you need to change
+this you can create the LocalStorage value `gameserver.url`. You can change
 LocalStorage values in Chrome by opening the developer tools (Ctrl-Shift-I)
 and clicking the Resources tab. You'll see Local Storage on the left.
 
