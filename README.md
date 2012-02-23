@@ -1,7 +1,7 @@
 [MoreGG](http://moregg.sc/) - Starcraft 2 Custom Game Finder
 ============================================================
 
-Here you'll find the full source to [http://moregg.sc](MoreGG.sc). Feel free
+Here you'll find the full source to [MoreGG.sc](http://moregg.sc). Feel free
 to make changes and send pull requests and I'll do my best to get them live if
 it looks good.
 
@@ -54,4 +54,6 @@ To make changes to the UI see:
  - `webui/src/js/views/main.js.coffee`
  - `webui/src/js/views/lobbies.js.coffee`
 
-The UI uses Backbone.js for organization and Underscore for templating.
+The UI uses [Backbone.js](http://documentcloud.github.com/backbone/) for
+organization and [Underscore.js](http://documentcloud.github.com/underscore/)
+for templating.
