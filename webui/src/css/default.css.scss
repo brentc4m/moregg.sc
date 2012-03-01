@@ -25,6 +25,19 @@ h1, h2, h3 {
     color: #000;
 }
 
+.intro-body {
+    h1 {
+        margin-top: 50px;
+    }
+    .span4 {
+        padding-top: 50px;
+    }
+
+    .row {
+        margin-top: 50px;
+    }
+}
+
 .panel-container {
     background: url(../img/panel_bg.png);
     border: 1px solid #232321;
